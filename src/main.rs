@@ -1,3 +1,7 @@
+mod db;
+
 fn main() {
-    println!("Hello, world!");
+    if let Err(e) = db::create_transactions_table() {
+        eprintln!("Error creating table: {}", e);
+    }
 }
