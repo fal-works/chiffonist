@@ -3,64 +3,50 @@ use encoding_rs::SHIFT_JIS;
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use std::fs;
 
-pub fn create_transactions_table() -> Result<(), rusqlite::Error> {
-    // SQLiteデータベースを作成または接続
-    let conn = rusqlite::Connection::open("data/transactions.db")?;
-
-    // テーブルを作成
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            include INTEGER NOT NULL,
-            date TEXT NOT NULL,
-            description TEXT NOT NULL,
-            amount INTEGER NOT NULL,
-            financial_institution TEXT NOT NULL,
-            major_category TEXT NOT NULL,
-            minor_category TEXT NOT NULL,
-            memo TEXT,
-            transfer INTEGER NOT NULL,
-            mf_id TEXT NOT NULL UNIQUE
-        );",
-        [],
-    )?;
-
-    println!("Table 'transactions' created successfully.");
-
-    Ok(())
-}
-
-pub enum LoadingError {
+pub enum DbError {
     Csv(csv::Error),
     Sqlite(rusqlite::Error),
     Std(std::io::Error),
     Other(String),
 }
 
-impl std::fmt::Display for LoadingError {
+pub fn create_transactions_table() -> Result<(), DbError> {
+    let conn =
+        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
+
+    let sql = include_str!("sql/create_transactions.sql");
+
+    conn.execute(sql, []).map_err(|e| DbError::Sqlite(e))?;
+
+    println!("Table 'transactions' created successfully.");
+
+    Ok(())
+}
+
+impl std::fmt::Display for DbError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoadingError::Csv(err) => write!(f, "CSV Error: {}", err),
-            LoadingError::Sqlite(err) => write!(f, "SQLite Error: {}", err),
-            LoadingError::Std(err) => write!(f, "IO Error: {}", err),
-            LoadingError::Other(msg) => write!(f, "Other Error: {}", msg),
+            DbError::Csv(err) => write!(f, "CSV Error: {}", err),
+            DbError::Sqlite(err) => write!(f, "SQLite Error: {}", err),
+            DbError::Std(err) => write!(f, "IO Error: {}", err),
+            DbError::Other(msg) => write!(f, "Other Error: {}", msg),
         }
     }
 }
 
-pub fn insert_csv_to_db() -> Result<(), LoadingError> {
+pub fn insert_csv_to_db() -> Result<(), DbError> {
     let conn =
-        rusqlite::Connection::open("data/transactions.db").map_err(|e| LoadingError::Sqlite(e))?;
+        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
     let input_dir = "data/input/";
 
-    for entry in fs::read_dir(input_dir).map_err(|e| LoadingError::Std(e))? {
-        let entry = entry.map_err(|e| LoadingError::Std(e))?;
+    for entry in fs::read_dir(input_dir).map_err(|e| DbError::Std(e))? {
+        let entry = entry.map_err(|e| DbError::Std(e))?;
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("csv") {
             println!("Processing file: {:?}", path);
 
-            let file = fs::File::open(&path).map_err(|e| LoadingError::Std(e))?;
+            let file = fs::File::open(&path).map_err(|e| DbError::Std(e))?;
             let transcoded_reader = DecodeReaderBytesBuilder::new()
                 .encoding(Some(SHIFT_JIS))
                 .build(file);
@@ -69,7 +55,7 @@ pub fn insert_csv_to_db() -> Result<(), LoadingError> {
                 .has_headers(true)
                 .from_reader(transcoded_reader);
 
-            let headers = reader.headers().map_err(|e| LoadingError::Csv(e))?.clone();
+            let headers = reader.headers().map_err(|e| DbError::Csv(e))?.clone();
             let expected_headers = [
                 "計算対象",
                 "日付",
@@ -84,7 +70,7 @@ pub fn insert_csv_to_db() -> Result<(), LoadingError> {
             ];
             for i in 0..expected_headers.len() {
                 if headers[i] != *expected_headers[i] {
-                    return Err(LoadingError::Other(format!(
+                    return Err(DbError::Other(format!(
                         "Expected header: {}, actual header: {}",
                         &headers[i], expected_headers[i]
                     )));
@@ -92,7 +78,7 @@ pub fn insert_csv_to_db() -> Result<(), LoadingError> {
             }
 
             for result in reader.records() {
-                let record = result.map_err(|e| LoadingError::Csv(e))?;
+                let record = result.map_err(|e| DbError::Csv(e))?;
 
                 conn.execute(
                     "INSERT INTO transactions (
@@ -102,23 +88,23 @@ pub fn insert_csv_to_db() -> Result<(), LoadingError> {
                     (
                         record[0]
                             .parse::<i32>()
-                            .map_err(|e| LoadingError::Other(e.to_string()))?,
+                            .map_err(|e| DbError::Other(e.to_string()))?,
                         &record[1],
                         &record[2],
                         record[3]
                             .parse::<i32>()
-                            .map_err(|e| LoadingError::Other(e.to_string()))?,
+                            .map_err(|e| DbError::Other(e.to_string()))?,
                         &record[4],
                         &record[5],
                         &record[6],
                         record.get(7).unwrap_or(""),
                         record[8]
                             .parse::<i32>()
-                            .map_err(|e| LoadingError::Other(e.to_string()))?,
+                            .map_err(|e| DbError::Other(e.to_string()))?,
                         &record[9],
                     ),
                 )
-                .map_err(|e| LoadingError::Sqlite(e))?;
+                .map_err(|e| DbError::Sqlite(e))?;
             }
         }
     }
