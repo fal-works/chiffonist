@@ -10,19 +10,6 @@ pub enum DbError {
     Other(String),
 }
 
-pub fn create_mf_transaction_table() -> Result<(), DbError> {
-    let conn =
-        rusqlite::Connection::open("data/mf_transaction.db").map_err(|e| DbError::Sqlite(e))?;
-
-    let sql = include_str!("sql/create_mf_transaction.sql");
-
-    conn.execute(sql, []).map_err(|e| DbError::Sqlite(e))?;
-
-    println!("Table 'mf_transaction' created successfully.");
-
-    Ok(())
-}
-
 impl std::fmt::Display for DbError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -32,6 +19,24 @@ impl std::fmt::Display for DbError {
             DbError::Other(msg) => write!(f, "Other Error: {}", msg),
         }
     }
+}
+
+pub fn create_tables() -> Result<(), DbError> {
+    create_table(
+        "mf_transaction",
+        include_str!("sql/create_mf_transaction.sql"),
+    )?;
+
+    Ok(())
+}
+
+fn create_table(name: &str, sql: &str) -> Result<(), DbError> {
+    let conn =
+        rusqlite::Connection::open(format!("data/{}.db", name)).map_err(|e| DbError::Sqlite(e))?;
+    conn.execute(sql, []).map_err(|e| DbError::Sqlite(e))?;
+    println!("Table '{}' created successfully.", name);
+
+    Ok(())
 }
 
 pub fn insert_csv_to_db() -> Result<(), DbError> {

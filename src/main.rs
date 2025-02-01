@@ -7,7 +7,7 @@ fn main() {
 }
 
 fn create_tables() {
-    if let Err(e) = db::create_mf_transaction_table() {
+    if let Err(e) = db::create_tables() {
         eprintln!("Error creating table: {}", e);
     }
 }
