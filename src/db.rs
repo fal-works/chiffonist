@@ -10,15 +10,15 @@ pub enum DbError {
     Other(String),
 }
 
-pub fn create_transactions_table() -> Result<(), DbError> {
+pub fn create_mf_transaction_table() -> Result<(), DbError> {
     let conn =
-        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
+        rusqlite::Connection::open("data/mf_transaction.db").map_err(|e| DbError::Sqlite(e))?;
 
-    let sql = include_str!("sql/create_transactions.sql");
+    let sql = include_str!("sql/create_mf_transaction.sql");
 
     conn.execute(sql, []).map_err(|e| DbError::Sqlite(e))?;
 
-    println!("Table 'transactions' created successfully.");
+    println!("Table 'mf_transaction' created successfully.");
 
     Ok(())
 }
@@ -36,7 +36,7 @@ impl std::fmt::Display for DbError {
 
 pub fn insert_csv_to_db() -> Result<(), DbError> {
     let conn =
-        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
+        rusqlite::Connection::open("data/mf_transaction.db").map_err(|e| DbError::Sqlite(e))?;
     let input_dir = "data/input/";
 
     for entry in fs::read_dir(input_dir).map_err(|e| DbError::Std(e))? {
@@ -81,7 +81,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 let record = result.map_err(|e| DbError::Csv(e))?;
 
                 conn.execute(
-                    "INSERT INTO transactions (
+                    "INSERT INTO mf_transaction (
                   include, date, description, amount, financial_institution,
                   major_category, minor_category, memo, transfer, mf_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
@@ -113,13 +113,13 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
     Ok(())
 }
 
-pub fn print_transactions_summary() -> rusqlite::Result<()> {
-    let conn = rusqlite::Connection::open("data/transactions.db")?;
+pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
+    let conn = rusqlite::Connection::open("data/mf_transaction.db")?;
 
-    let count: i64 = conn.query_row("SELECT COUNT(*) FROM transactions", [], |row| row.get(0))?;
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM mf_transaction", [], |row| row.get(0))?;
     println!("Total records: {}", count);
 
-    let mut stmt = conn.prepare("SELECT * FROM transactions LIMIT 10")?;
+    let mut stmt = conn.prepare("SELECT * FROM mf_transaction LIMIT 10")?;
     let rows = stmt.query_map([], |row| {
         Ok((
             row.get::<_, i32>(0)?,
