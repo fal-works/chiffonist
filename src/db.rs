@@ -83,7 +83,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 conn.execute(
                     "INSERT INTO mf_transaction (
                   include, date, description, amount, financial_institution,
-                  major_category, minor_category, memo, transfer, mf_id
+                  major_category, minor_category, memo, transfer, mf_original_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                     (
                         record[0]
@@ -149,11 +149,11 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
             minor_category,
             memo,
             transfer,
-            mf_id,
+            mf_original_id,
         ) = record?;
         println!(
-          "ID: {}, Include: {}, Date: {}, Description: {}, Amount: {}, Institution: {}, Major: {}, Minor: {}, Memo: {}, Transfer: {}, MF_ID: {}",
-          id, include, date, description, amount, financial_institution, major_category, minor_category, memo, transfer, mf_id
+          "ID: {}, Include: {}, Date: {}, Description: {}, Amount: {}, Institution: {}, Major: {}, Minor: {}, Memo: {}, Transfer: {}, MF original ID: {}",
+          id, include, date, description, amount, financial_institution, major_category, minor_category, memo, transfer, mf_original_id
       );
     }
 

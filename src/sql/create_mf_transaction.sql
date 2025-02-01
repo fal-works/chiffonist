@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS mf_transaction (
   minor_category TEXT NOT NULL,
   memo TEXT,
   transfer INTEGER NOT NULL,
-  mf_id TEXT NOT NULL UNIQUE
+  mf_original_id TEXT NOT NULL UNIQUE
 );
