@@ -26,6 +26,10 @@ pub fn create_tables() -> Result<(), DbError> {
         "mf_transaction",
         include_str!("sql/create_mf_transaction.sql"),
     )?;
+    create_table(
+        "transaction_history",
+        include_str!("sql/create_transaction_history.sql"),
+    )?;
 
     Ok(())
 }
