@@ -22,30 +22,24 @@ impl std::fmt::Display for DbError {
 }
 
 pub fn create_tables() -> Result<(), DbError> {
-    create_table(
-        "mf_transaction",
-        include_str!("sql/create_mf_transaction.sql"),
-    )?;
-    create_table(
-        "transaction_history",
-        include_str!("sql/create_transaction_history.sql"),
-    )?;
+    let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
+
+    create_table(&conn, include_str!("sql/create_mf_transaction.sql"))?;
+    create_table(&conn, include_str!("sql/create_transaction_history.sql"))?;
+
+    println!("Tables created successfully.");
 
     Ok(())
 }
 
-fn create_table(name: &str, sql: &str) -> Result<(), DbError> {
-    let conn =
-        rusqlite::Connection::open(format!("data/{}.db", name)).map_err(|e| DbError::Sqlite(e))?;
-    conn.execute(sql, []).map_err(|e| DbError::Sqlite(e))?;
-    println!("Table '{}' created successfully.", name);
-
+fn create_table(conn: &rusqlite::Connection, sql: &str) -> Result<(), DbError> {
+    conn.execute(sql, []).map_err(DbError::Sqlite)?;
     Ok(())
 }
 
 pub fn insert_csv_to_db() -> Result<(), DbError> {
     let conn =
-        rusqlite::Connection::open("data/mf_transaction.db").map_err(|e| DbError::Sqlite(e))?;
+        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
     let input_dir = "data/input/";
 
     for entry in fs::read_dir(input_dir).map_err(|e| DbError::Std(e))? {
@@ -123,7 +117,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
 }
 
 pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
-    let conn = rusqlite::Connection::open("data/mf_transaction.db")?;
+    let conn = rusqlite::Connection::open("data/transactions.db")?;
 
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM mf_transaction", [], |row| row.get(0))?;
     println!("Total records: {}", count);
