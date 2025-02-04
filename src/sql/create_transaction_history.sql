@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS transaction_history (
   date TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
   amount INTEGER NOT NULL,
-  major_category TEXT NOT NULL DEFAULT 'uncategorized',
-  minor_category TEXT NOT NULL DEFAULT 'uncategorized',
+  major_category TEXT NOT NULL DEFAULT 'none',
+  minor_category TEXT NOT NULL DEFAULT 'none',
   memo TEXT NOT NULL DEFAULT '',
   mf_transaction_id INTEGER UNIQUE -- FK
 );
