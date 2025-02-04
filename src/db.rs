@@ -120,7 +120,7 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
     let conn = rusqlite::Connection::open("data/transactions.db")?;
 
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM mf_transaction", [], |row| row.get(0))?;
-    println!("Total records: {}", count);
+    println!("mf_transaction total records: {}", count);
 
     let mut stmt = conn.prepare("SELECT * FROM mf_transaction LIMIT 10")?;
     let rows = stmt.query_map([], |row| {
@@ -139,7 +139,7 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
         ))
     })?;
 
-    println!("First 10 records:");
+    println!("mf_transaction first 10 records:");
     for record in rows {
         let (
             id,
@@ -158,6 +158,52 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
           "ID: {}, Include: {}, Date: {}, Description: {}, Amount: {}, Institution: {}, Major: {}, Minor: {}, Memo: {}, Transfer: {}, MF original ID: {}",
           id, include, date, description, amount, financial_institution, major_category, minor_category, memo, transfer, mf_original_id
       );
+    }
+
+    Ok(())
+}
+
+pub fn etl_mf_transaction_to_transaction_history() -> Result<(), DbError> {
+    let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
+
+    conn.execute(
+        include_str!("sql/etl_mf_transaction_to_transaction_history.sql"),
+        [],
+    )
+    .map_err(DbError::Sqlite)?;
+
+    println!("Successfully transferred MF records to transaction_history.");
+    Ok(())
+}
+
+pub fn print_transaction_summary() -> rusqlite::Result<()> {
+    let conn = rusqlite::Connection::open("data/transactions.db")?;
+
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM transaction_history", [], |row| {
+        row.get(0)
+    })?;
+    println!("transaction_history total records: {}", count);
+
+    let mut stmt = conn.prepare("SELECT * FROM transaction_history LIMIT 10")?;
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, i32>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, i32>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, String>(5)?,
+            row.get::<_, String>(6)?,
+        ))
+    })?;
+
+    println!("transaction_history first 10 records:");
+    for record in rows {
+        let (id, date, description, amount, major_category, minor_category, memo) = record?;
+        println!(
+            "ID: {}, Date: {}, Description: {}, Amount: {}, Major: {}, Minor: {}, Memo: {}",
+            id, date, description, amount, major_category, minor_category, memo
+        );
     }
 
     Ok(())
