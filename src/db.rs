@@ -38,18 +38,17 @@ fn create_table(conn: &rusqlite::Connection, sql: &str) -> Result<(), DbError> {
 }
 
 pub fn insert_csv_to_db() -> Result<(), DbError> {
-    let conn =
-        rusqlite::Connection::open("data/transactions.db").map_err(|e| DbError::Sqlite(e))?;
+    let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
     let input_dir = "data/input/";
 
-    for entry in fs::read_dir(input_dir).map_err(|e| DbError::Std(e))? {
-        let entry = entry.map_err(|e| DbError::Std(e))?;
+    for entry in fs::read_dir(input_dir).map_err(DbError::Std)? {
+        let entry = entry.map_err(DbError::Std)?;
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("csv") {
             println!("Processing file: {:?}", path);
 
-            let file = fs::File::open(&path).map_err(|e| DbError::Std(e))?;
+            let file = fs::File::open(&path).map_err(DbError::Std)?;
             let transcoded_reader = DecodeReaderBytesBuilder::new()
                 .encoding(Some(SHIFT_JIS))
                 .build(file);
@@ -58,7 +57,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 .has_headers(true)
                 .from_reader(transcoded_reader);
 
-            let headers = reader.headers().map_err(|e| DbError::Csv(e))?.clone();
+            let headers = reader.headers().map_err(DbError::Csv)?.clone();
             let expected_headers = [
                 "計算対象",
                 "日付",
@@ -81,7 +80,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
             }
 
             for result in reader.records() {
-                let record = result.map_err(|e| DbError::Csv(e))?;
+                let record = result.map_err(DbError::Csv)?;
 
                 conn.execute(
                     "INSERT INTO mf_transaction (
@@ -107,7 +106,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                         &record[9],
                     ),
                 )
-                .map_err(|e| DbError::Sqlite(e))?;
+                .map_err(DbError::Sqlite)?;
             }
         }
     }
