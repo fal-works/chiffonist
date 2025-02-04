@@ -21,19 +21,40 @@ impl std::fmt::Display for DbError {
     }
 }
 
-pub fn create_tables() -> Result<(), DbError> {
+pub fn create_tables(clean: bool) -> Result<(), DbError> {
     let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
 
-    create_table(&conn, include_str!("sql/create_mf_transaction.sql"))?;
-    create_table(&conn, include_str!("sql/create_transaction_history.sql"))?;
-
-    println!("Tables created successfully.");
+    create_table(
+        &conn,
+        "mf_transaction",
+        include_str!("sql/create_mf_transaction.sql"),
+        clean,
+    )?;
+    create_table(
+        &conn,
+        "transaction_history",
+        include_str!("sql/create_transaction_history.sql"),
+        clean,
+    )?;
 
     Ok(())
 }
 
-fn create_table(conn: &rusqlite::Connection, sql: &str) -> Result<(), DbError> {
+fn create_table(
+    conn: &rusqlite::Connection,
+    name: &str,
+    sql: &str,
+    clean: bool,
+) -> Result<(), DbError> {
+    if clean {
+        conn.execute(&format!("DROP TABLE IF EXISTS {name};"), [])
+            .map_err(DbError::Sqlite)?;
+        println!("Table '{name}' dropped successfully.");
+    }
+
     conn.execute(sql, []).map_err(DbError::Sqlite)?;
+    println!("Table '{name}' created successfully.");
+
     Ok(())
 }
 
