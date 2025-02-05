@@ -186,11 +186,34 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
 pub fn etl_mf_transaction_to_transaction_history() -> Result<(), DbError> {
     let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
 
-    conn.execute(
-        include_str!("sql/etl_mf_transaction_to_transaction_history.sql"),
-        [],
-    )
-    .map_err(DbError::Sqlite)?;
+    let mut extract_statement = conn
+        .prepare(include_str!("sql/extract_mf_transaction.sql"))
+        .map_err(DbError::Sqlite)?;
+    let mf_transactions = extract_statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, i32>(0)?,    // id
+                row.get::<_, String>(1)?, // date
+                row.get::<_, String>(2)?, // description
+                row.get::<_, i32>(3)?,    // amount
+                row.get::<_, String>(4)?, // major category
+                row.get::<_, String>(5)?, // minor category
+                row.get::<_, String>(6)?, // memo
+            ))
+        })
+        .map_err(DbError::Sqlite)?;
+
+    let mut load_statement = conn.prepare(
+        "INSERT INTO transaction_history (date, description, amount, major_category, minor_category, memo, mf_transaction_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
+    ).map_err(DbError::Sqlite)?;
+    for transaction in mf_transactions {
+        let (mf_id, date, description, amount, _major_category, _minor_category, memo) =
+            transaction.map_err(DbError::Sqlite)?;
+        load_statement
+            .execute((&date, &description, amount, "none", "none", &memo, mf_id))
+            .map_err(DbError::Sqlite)?;
+    }
 
     println!("Successfully transferred MF records to transaction_history.");
     Ok(())
