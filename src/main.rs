@@ -9,7 +9,7 @@ fn main() {
 }
 
 fn create_tables() {
-    if let Err(e) = db::create_tables(true) {
+    if let Err(e) = db::create_tables(false) {
         eprintln!("Error creating table: {}", e);
     }
 }
