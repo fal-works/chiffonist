@@ -46,11 +46,11 @@ fn create_table(
     if clean {
         conn.execute(&format!("DROP TABLE IF EXISTS {name};"), [])
             .map_err(DbError::Sqlite)?;
-        println!("Table '{name}' dropped successfully.");
     }
 
     conn.execute(sql, []).map_err(DbError::Sqlite)?;
-    println!("Table '{name}' created successfully.");
+
+    println!("Table '{name}' prepared successfully.");
 
     Ok(())
 }
