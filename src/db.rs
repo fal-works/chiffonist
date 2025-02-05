@@ -1,6 +1,3 @@
-use csv::ReaderBuilder;
-use encoding_rs::SHIFT_JIS;
-use encoding_rs_io::DecodeReaderBytesBuilder;
 use std::fs;
 
 pub enum DbError {
@@ -70,11 +67,11 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
             println!("Processing file: {:?}", path);
 
             let file = fs::File::open(&path).map_err(DbError::Std)?;
-            let transcoded_reader = DecodeReaderBytesBuilder::new()
-                .encoding(Some(SHIFT_JIS))
+            let transcoded_reader = encoding_rs_io::DecodeReaderBytesBuilder::new()
+                .encoding(Some(encoding_rs::SHIFT_JIS))
                 .build(file);
 
-            let mut reader = ReaderBuilder::new()
+            let mut reader = csv::ReaderBuilder::new()
                 .has_headers(true)
                 .from_reader(transcoded_reader);
 
