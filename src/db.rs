@@ -101,7 +101,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 let record = result.map_err(DbError::Csv)?;
 
                 conn.execute(
-                    "INSERT INTO mf_transaction (
+                    "INSERT OR IGNORE INTO mf_transaction (
                   include, date, description, amount, financial_institution,
                   major_category, minor_category, memo, transfer, mf_original_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
