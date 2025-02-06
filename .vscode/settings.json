@@ -1,4 +1,5 @@
 {
+  "files.trimTrailingWhitespace": true,
   "sqltools.connections": [
     {
       "previewLimit": 50,
