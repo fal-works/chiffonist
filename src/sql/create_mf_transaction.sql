@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS mf_transaction (
   financial_institution TEXT NOT NULL,
   major_category TEXT NOT NULL,
   minor_category TEXT NOT NULL,
-  memo TEXT,
+  memo TEXT NOT NULL,
   transfer INTEGER NOT NULL,
   mf_original_id TEXT NOT NULL UNIQUE
 );
