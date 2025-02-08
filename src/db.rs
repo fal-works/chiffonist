@@ -2,6 +2,7 @@ use std::fs;
 
 pub enum DbError {
     Csv(csv::Error),
+    Yaml(serde_yaml::Error),
     Sqlite(rusqlite::Error),
     Std(std::io::Error),
     Other(String),
@@ -11,6 +12,7 @@ impl std::fmt::Display for DbError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DbError::Csv(err) => write!(f, "CSV Error: {}", err),
+            DbError::Yaml(err) => write!(f, "YAML Error: {}", err),
             DbError::Sqlite(err) => write!(f, "SQLite Error: {}", err),
             DbError::Std(err) => write!(f, "IO Error: {}", err),
             DbError::Other(msg) => write!(f, "Other Error: {}", msg),
@@ -31,6 +33,12 @@ pub fn create_tables(clean: bool) -> Result<(), DbError> {
         &conn,
         "transaction_history",
         include_str!("sql/create_transaction_history.sql"),
+        clean,
+    )?;
+    create_table(
+        &conn,
+        "mf_transaction_categorization_rule",
+        include_str!("sql/create_mf_transaction_categorization_rule.sql"),
         clean,
     )?;
 
@@ -180,37 +188,84 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
     Ok(())
 }
 
+pub fn load_categorization_rules() -> Result<(), DbError> {
+    let yaml_str: String = std::fs::read_to_string("data/input/mf-transaction-categorization-rules.yaml")
+        .map_err(DbError::Std)?;
+    let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str).map_err(DbError::Yaml)?;
+
+    let rules = yaml["rules"].as_sequence().ok_or(DbError::Other(
+        "YAML の `rules` が配列ではありません".into(),
+    ))?;
+
+    let mut conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
+    let db_transaction = conn.transaction().map_err(DbError::Sqlite)?;
+
+    {
+        let mut insert_statement = db_transaction
+            .prepare(
+                "INSERT INTO mf_transaction_categorization_rule (
+            mf_include, mf_date_min, mf_date_max, mf_description_glob,
+            mf_amount_min, mf_amount_max, mf_financial_institution,
+            mf_major_category, mf_minor_category, mf_memo_glob,
+            mf_transfer, new_major_category, new_minor_category
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            )
+            .map_err(DbError::Sqlite)?;
+
+        for rule in rules {
+            let condition = rule.get("if").unwrap_or(&serde_yaml::Value::Null);
+            let result = rule
+                .get("set")
+                .ok_or(DbError::Other("ルールに `set` ブロックがありません".into()))?;
+
+            insert_statement
+                .execute(rusqlite::params![
+                    condition["計算対象"].as_i64(),
+                    condition["日付"]
+                        .as_mapping()
+                        .and_then(|m| m.get(&serde_yaml::Value::String("min".to_string())))
+                        .and_then(|v| v.as_str()),
+                    condition["日付"]
+                        .as_mapping()
+                        .and_then(|m| m.get(&serde_yaml::Value::String("max".to_string())))
+                        .and_then(|v| v.as_str()),
+                    condition["内容"].as_str(),
+                    condition["金額"]
+                        .as_mapping()
+                        .and_then(|m| m.get(&serde_yaml::Value::String("min".to_string())))
+                        .and_then(|v| v.as_i64()),
+                    condition["金額"]
+                        .as_mapping()
+                        .and_then(|m| m.get(&serde_yaml::Value::String("max".to_string())))
+                        .and_then(|v| v.as_i64()),
+                    condition["金融機関"].as_str(),
+                    condition["大項目"].as_str(),
+                    condition["中項目"].as_str(),
+                    condition["メモ"].as_str(),
+                    condition["振替"].as_i64(),
+                    result["major-category"].as_str().ok_or(DbError::Other(
+                        "`set` ブロックに `major-category` がありません".into()
+                    ))?,
+                    result["minor-category"].as_str()
+                ])
+                .map_err(DbError::Sqlite)?;
+        }
+    }
+
+    db_transaction.commit().map_err(DbError::Sqlite)?;
+
+    println!("MF入出金明細の分類ルールを `mf_transaction_categorization_rule` テーブルに挿入しました");
+    Ok(())
+}
+
 pub fn etl_mf_transaction_to_transaction_history() -> Result<(), DbError> {
     let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
 
-    let mut extract_statement = conn
-        .prepare(include_str!("sql/extract_mf_transaction.sql"))
-        .map_err(DbError::Sqlite)?;
-    let mf_transactions = extract_statement
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, i32>(0)?,    // id
-                row.get::<_, String>(1)?, // date
-                row.get::<_, String>(2)?, // description
-                row.get::<_, i32>(3)?,    // amount
-                row.get::<_, String>(4)?, // major category
-                row.get::<_, String>(5)?, // minor category
-                row.get::<_, String>(6)?, // memo
-            ))
-        })
-        .map_err(DbError::Sqlite)?;
-
-    let mut load_statement = conn.prepare(
-        "INSERT INTO transaction_history (date, description, amount, major_category, minor_category, memo, mf_transaction_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
-    ).map_err(DbError::Sqlite)?;
-    for transaction in mf_transactions {
-        let (mf_id, date, description, amount, _major_category, _minor_category, memo) =
-            transaction.map_err(DbError::Sqlite)?;
-        load_statement
-            .execute((&date, &description, amount, "none", "none", &memo, mf_id))
-            .map_err(DbError::Sqlite)?;
-    }
+    conn.execute(
+        include_str!("sql/etl_mf_transaction_to_transaction_history.sql"),
+        [],
+    )
+    .map_err(DbError::Sqlite)?;
 
     println!("Successfully transferred MF records to transaction_history.");
     Ok(())
