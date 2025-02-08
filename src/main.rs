@@ -4,6 +4,7 @@ fn main() {
     create_tables();
     load_csv();
     print_mf_transaction();
+    load_categorization_rules();
     etl_mf_transaction_to_transaction_history();
     print_transaction();
 }
@@ -23,6 +24,12 @@ fn load_csv() {
 fn print_mf_transaction() {
     if let Err(e) = db::print_mf_transaction_summary() {
         eprintln!("Error printing mf_transaction: {}", e);
+    }
+}
+
+fn load_categorization_rules() {
+    if let Err(e) = db::load_categorization_rules() {
+        eprintln!("Error loading categorization rules: {}", e);
     }
 }
 
