@@ -64,7 +64,7 @@ fn create_table(
 }
 
 pub fn insert_csv_to_db() -> Result<(), DbError> {
-    let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
+    let mut conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
     let input_dir = "data/input/";
 
     for entry in fs::read_dir(input_dir).map_err(DbError::Std)? {
@@ -105,35 +105,38 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 }
             }
 
+            let db_transaction = conn.transaction().map_err(DbError::Sqlite)?;
             for result in reader.records() {
                 let record = result.map_err(DbError::Csv)?;
 
-                conn.execute(
-                    "INSERT OR IGNORE INTO mf_transaction (
+                db_transaction
+                    .execute(
+                        "INSERT OR IGNORE INTO mf_transaction (
                   include, date, description, amount, financial_institution,
                   major_category, intermediate_category, memo, transfer, mf_original_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-                    (
-                        record[0]
-                            .parse::<i32>()
-                            .map_err(|e| DbError::Other(e.to_string()))?,
-                        &record[1],
-                        &record[2],
-                        record[3]
-                            .parse::<i32>()
-                            .map_err(|e| DbError::Other(e.to_string()))?,
-                        &record[4],
-                        &record[5],
-                        &record[6],
-                        record.get(7).unwrap_or(""),
-                        record[8]
-                            .parse::<i32>()
-                            .map_err(|e| DbError::Other(e.to_string()))?,
-                        &record[9],
-                    ),
-                )
-                .map_err(DbError::Sqlite)?;
+                        (
+                            record[0]
+                                .parse::<i32>()
+                                .map_err(|e| DbError::Other(e.to_string()))?,
+                            &record[1],
+                            &record[2],
+                            record[3]
+                                .parse::<i32>()
+                                .map_err(|e| DbError::Other(e.to_string()))?,
+                            &record[4],
+                            &record[5],
+                            &record[6],
+                            record.get(7).unwrap_or(""),
+                            record[8]
+                                .parse::<i32>()
+                                .map_err(|e| DbError::Other(e.to_string()))?,
+                            &record[9],
+                        ),
+                    )
+                    .map_err(DbError::Sqlite)?;
             }
+            db_transaction.commit().map_err(DbError::Sqlite)?;
         }
     }
 
