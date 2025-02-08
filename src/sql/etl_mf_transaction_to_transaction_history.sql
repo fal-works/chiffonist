@@ -2,16 +2,16 @@ INSERT INTO transaction_history (
     date,
     description,
     amount,
-    major_category,
-    minor_category,
+    category,
+    sub_category,
     memo,
     mf_transaction_id
   )
 SELECT sub.date,
   sub.description,
   sub.amount,
-  COALESCE(sub.new_major_category, 'none') AS major_category,
-  COALESCE(sub.new_minor_category, 'none') AS minor_category,
+  COALESCE(sub.new_category, 'none') AS category,
+  COALESCE(sub.new_sub_category, 'none') AS sub_category,
   sub.memo,
   sub.mf_id
 FROM (
@@ -20,8 +20,8 @@ FROM (
       mf.description,
       mf.amount,
       mf.memo,
-      cr.new_major_category,
-      cr.new_minor_category,
+      cr.new_category,
+      cr.new_sub_category,
       ROW_NUMBER() OVER (
         PARTITION BY mf.id
         ORDER BY cr.id ASC
@@ -60,8 +60,8 @@ FROM (
         OR mf.major_category = cr.mf_major_category
       )
       AND (
-        cr.mf_minor_category IS NULL
-        OR mf.minor_category = cr.mf_minor_category
+        cr.mf_intermediate_category IS NULL
+        OR mf.intermediate_category = cr.mf_intermediate_category
       )
       AND (
         cr.mf_memo_glob IS NULL

@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS mf_transaction_categorization_rule (
   mf_amount_max INTEGER,
   mf_financial_institution TEXT,
   mf_major_category TEXT,
-  mf_minor_category TEXT,
+  mf_intermediate_category TEXT,
   mf_memo_glob TEXT,
   mf_transfer INTEGER,
-  new_major_category TEXT NOT NULL,
-  new_minor_category TEXT
+  new_category TEXT NOT NULL,
+  new_sub_category TEXT
 );

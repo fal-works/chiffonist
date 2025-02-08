@@ -111,7 +111,7 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 conn.execute(
                     "INSERT OR IGNORE INTO mf_transaction (
                   include, date, description, amount, financial_institution,
-                  major_category, minor_category, memo, transfer, mf_original_id
+                  major_category, intermediate_category, memo, transfer, mf_original_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                     (
                         record[0]
@@ -174,14 +174,14 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
             amount,
             financial_institution,
             major_category,
-            minor_category,
+            intermediate_category,
             memo,
             transfer,
             mf_original_id,
         ) = record?;
         println!(
-          "ID: {}, Include: {}, Date: {}, Description: {}, Amount: {}, Institution: {}, Major: {}, Minor: {}, Memo: {}, Transfer: {}, MF original ID: {}",
-          id, include, date, description, amount, financial_institution, major_category, minor_category, memo, transfer, mf_original_id
+          "ID: {}, 計算対象: {}, 日付: {}, 内容: {}, 金額: {}, 金融機関: {}, 大項目: {}, 中項目: {}, メモ: {}, 振替: {}, MF ID: {}",
+          id, include, date, description, amount, financial_institution, major_category, intermediate_category, memo, transfer, mf_original_id
       );
     }
 
@@ -189,8 +189,9 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
 }
 
 pub fn load_categorization_rules() -> Result<(), DbError> {
-    let yaml_str: String = std::fs::read_to_string("data/input/mf-transaction-categorization-rules.yaml")
-        .map_err(DbError::Std)?;
+    let yaml_str: String =
+        std::fs::read_to_string("data/input/mf-transaction-categorization-rules.yaml")
+            .map_err(DbError::Std)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str).map_err(DbError::Yaml)?;
 
     let rules = yaml["rules"].as_sequence().ok_or(DbError::Other(
@@ -206,8 +207,8 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
                 "INSERT INTO mf_transaction_categorization_rule (
             mf_include, mf_date_min, mf_date_max, mf_description_glob,
             mf_amount_min, mf_amount_max, mf_financial_institution,
-            mf_major_category, mf_minor_category, mf_memo_glob,
-            mf_transfer, new_major_category, new_minor_category
+            mf_major_category, mf_intermediate_category, mf_memo_glob,
+            mf_transfer, new_category, new_sub_category
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .map_err(DbError::Sqlite)?;
@@ -243,10 +244,10 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
                     condition["中項目"].as_str(),
                     condition["メモ"].as_str(),
                     condition["振替"].as_i64(),
-                    result["major-category"].as_str().ok_or(DbError::Other(
-                        "`set` ブロックに `major-category` がありません".into()
+                    result["category"].as_str().ok_or(DbError::Other(
+                        "`set` ブロックに `category` がありません".into()
                     ))?,
-                    result["minor-category"].as_str()
+                    result["sub-category"].as_str()
                 ])
                 .map_err(DbError::Sqlite)?;
         }
@@ -254,7 +255,9 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
 
     db_transaction.commit().map_err(DbError::Sqlite)?;
 
-    println!("MF入出金明細の分類ルールを `mf_transaction_categorization_rule` テーブルに挿入しました");
+    println!(
+        "MF入出金明細の分類ルールを `mf_transaction_categorization_rule` テーブルに挿入しました"
+    );
     Ok(())
 }
 
@@ -294,10 +297,10 @@ pub fn print_transaction_summary() -> rusqlite::Result<()> {
 
     println!("transaction_history first 10 records:");
     for record in rows {
-        let (id, date, description, amount, major_category, minor_category, memo) = record?;
+        let (id, date, description, amount, category, sub_category, memo) = record?;
         println!(
-            "ID: {}, Date: {}, Description: {}, Amount: {}, Major: {}, Minor: {}, Memo: {}",
-            id, date, description, amount, major_category, minor_category, memo
+            "ID: {}, Date: {}, Description: {}, Amount: {}, Category: {}, Sub-category: {}, Memo: {}",
+            id, date, description, amount, category, sub_category, memo
         );
     }
 

@@ -80,19 +80,19 @@
           },
           "set": {
             "type": "object",
-            "description": "この分類規則の if ブロックの条件に合致した明細に対して設定する分類コードです。 major-category は設定必須です。",
+            "description": "この分類規則の if ブロックの条件に合致した明細に対して設定する分類コードです。 category は設定必須です。",
             "properties": {
-              "major-category": {
+              "category": {
                 "type": "string",
                 "description": "条件に合致した場合に設定するカテゴリーのコードです。"
               },
-              "minor-category": {
+              "sub-category": {
                 "type": "string",
                 "description": "条件に合致した場合に設定するサブカテゴリーのコードです。"
               }
             },
             "required": [
-              "major-category"
+              "category"
             ],
             "additionalProperties": false
           }
