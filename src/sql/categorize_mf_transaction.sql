@@ -1,25 +1,15 @@
-INSERT INTO transaction_history (
-    date,
-    description,
-    amount,
-    category,
-    sub_category,
-    memo,
-    mf_transaction_id
-  )
-SELECT sub.date,
-  sub.description,
-  sub.amount,
+/*
+ mf_transaction テーブルのレコードのうち、
+ transaction_history テーブルに未登録なものについて、
+ mf_transaction_categorization_rule テーブルに従って分類を行い、
+ 一時テーブル categorized_mf_transaction に保存します。
+ */
+INSERT INTO categorized_mf_transaction (id, category, sub_category)
+SELECT sub.mf_id,
   COALESCE(sub.new_category, 'none') AS category,
-  COALESCE(sub.new_sub_category, 'none') AS sub_category,
-  sub.memo,
-  sub.mf_id
+  COALESCE(sub.new_sub_category, 'none') AS sub_category
 FROM (
     SELECT mf.id AS mf_id,
-      mf.date,
-      mf.description,
-      mf.amount,
-      mf.memo,
       cr.new_category,
       cr.new_sub_category,
       ROW_NUMBER() OVER (

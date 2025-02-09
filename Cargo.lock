@@ -32,6 +32,7 @@ dependencies = [
  "encoding_rs_io",
  "rusqlite",
  "serde_yaml",
+ "tabwriter",
 ]
 
 [[package]]
@@ -249,10 +250,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tabwriter"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fce91f2f0ec87dff7e6bcbbeb267439aa1188703003c6055193c821487400432"
+dependencies = [
+ "unicode-width",
+]
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11cd88e12b17c6494200a9c1b683a04fcac9573ed74cd1b62aeb2727c5592243"
+
+[[package]]
+name = "unicode-width"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
 
 [[package]]
 name = "unsafe-libyaml"

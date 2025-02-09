@@ -1,5 +1,6 @@
-use std::fs;
+use std::{fs, io::Write};
 
+#[derive(Debug)]
 pub enum DbError {
     Csv(csv::Error),
     Yaml(serde_yaml::Error),
@@ -264,17 +265,56 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
     Ok(())
 }
 
-pub fn etl_mf_transaction_to_transaction_history() -> Result<(), DbError> {
+pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
     let conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
 
     conn.execute(
-        include_str!("sql/etl_mf_transaction_to_transaction_history.sql"),
+        include_str!("sql/create_tmp_categorized_mf_transaction.sql"),
         [],
     )
     .map_err(DbError::Sqlite)?;
+    conn.execute(include_str!("sql/categorize_mf_transaction.sql"), [])
+        .map_err(DbError::Sqlite)?;
 
-    println!("Successfully transferred MF records to transaction_history.");
-    Ok(())
+    let mut select_uncategorized = conn
+        .prepare(include_str!("sql/select_uncategorized_mf_transaction.sql"))
+        .map_err(DbError::Sqlite)?;
+
+    let to_be_inserted = if select_uncategorized.exists([]).map_err(DbError::Sqlite)? {
+        println!("下記の明細が分類できませんでした:");
+        print_table_tabwriter(
+            &mut select_uncategorized,
+            &[
+                "id",
+                "計算対象",
+                "日付",
+                "内容",
+                "金額（円）",
+                "保有金融機関",
+                "大項目",
+                "中項目",
+                "メモ",
+                "振替",
+                "MF ID",
+            ],
+        )?;
+        confirm_continue()?
+    } else {
+        true
+    };
+
+    if to_be_inserted {
+        conn.execute(
+            include_str!("sql/insert_categorized_mf_transaction_to_transaction_history.sql"),
+            [],
+        )
+        .map_err(DbError::Sqlite)?;
+        println!("Successfully transferred MF records to transaction_history.");
+    } else {
+        println!("Cancelled transferring MF records to transaction_history.");
+    }
+
+    Ok(to_be_inserted)
 }
 
 pub fn print_transaction_summary() -> rusqlite::Result<()> {
@@ -308,4 +348,63 @@ pub fn print_transaction_summary() -> rusqlite::Result<()> {
     }
 
     Ok(())
+}
+
+fn confirm_continue() -> Result<bool, DbError> {
+    let mut stdout = std::io::stdout();
+    let stdin: std::io::Stdin = std::io::stdin();
+
+    loop {
+        stdout
+            .write_all(b"Continue? [y/n]\n")
+            .map_err(DbError::Std)?;
+        stdout.flush().map_err(DbError::Std)?;
+
+        let mut input = String::new();
+        stdin.read_line(&mut input).unwrap();
+
+        match input.trim() {
+            "y" => return Ok(true),
+            "n" => return Ok(false),
+            _ => stdout
+                .write_all(b"Please enter 'y' or 'n'.\n")
+                .map_err(DbError::Std)?,
+        }
+    }
+}
+
+fn print_table_tabwriter(
+    stmt: &mut rusqlite::Statement<'_>,
+    column_names: &[&str],
+) -> Result<(), DbError> {
+    let column_count = column_names.len();
+    let rows = stmt
+        .query_map([], |row| {
+            (0..column_count)
+                .map(|i| Ok(db_value_to_string(row.get(i)?)))
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .map_err(DbError::Sqlite)?;
+
+    let mut writer = tabwriter::TabWriter::new(std::io::stdout()).padding(2);
+
+    writeln!(writer, "{}", column_names.join("\t")).map_err(DbError::Std)?;
+    writeln!(writer, "{}", "-".repeat(80)).map_err(DbError::Std)?;
+    for row in rows {
+        let row_values = row.map_err(DbError::Sqlite)?;
+        writeln!(writer, "{}", row_values.join("\t")).map_err(DbError::Std)?;
+    }
+
+    writer.flush().map_err(DbError::Std)?;
+    Ok(())
+}
+
+fn db_value_to_string(value: rusqlite::types::Value) -> String {
+    match value {
+        rusqlite::types::Value::Integer(n) => n.to_string(),
+        rusqlite::types::Value::Real(f) => f.to_string(),
+        rusqlite::types::Value::Text(s) => s,
+        rusqlite::types::Value::Null => "[NULL]".to_string(),
+        rusqlite::types::Value::Blob(_) => "[BLOB]".to_string(),
+    }
 }
