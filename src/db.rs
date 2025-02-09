@@ -295,7 +295,7 @@ pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
                 "中項目",
                 "メモ",
                 "振替",
-                "MF ID",
+                // "MF ID",
             ],
         )?;
         confirm_continue()?
@@ -381,21 +381,26 @@ fn print_table_tabwriter(
     let rows = stmt
         .query_map([], |row| {
             (0..column_count)
-                .map(|i| Ok(db_value_to_string(row.get(i)?)))
+                .map(|i| {
+                    let s = db_value_to_string(row.get(i)?);
+                    Ok(truncate_string(&s, 30))
+                })
                 .collect::<Result<Vec<_>, _>>()
         })
         .map_err(DbError::Sqlite)?;
 
-    let mut writer = tabwriter::TabWriter::new(std::io::stdout()).padding(2);
+    let mut stdout = std::io::stdout();
+    stdout.write_all(b"\n").map_err(DbError::Std)?;
 
+    let mut writer = tabwriter::TabWriter::new(std::io::stdout());
     writeln!(writer, "{}", column_names.join("\t")).map_err(DbError::Std)?;
-    writeln!(writer, "{}", "-".repeat(80)).map_err(DbError::Std)?;
     for row in rows {
         let row_values = row.map_err(DbError::Sqlite)?;
         writeln!(writer, "{}", row_values.join("\t")).map_err(DbError::Std)?;
     }
-
     writer.flush().map_err(DbError::Std)?;
+
+    stdout.write_all(b"\n").map_err(DbError::Std)?;
     Ok(())
 }
 
@@ -407,4 +412,13 @@ fn db_value_to_string(value: rusqlite::types::Value) -> String {
         rusqlite::types::Value::Null => "[NULL]".to_string(),
         rusqlite::types::Value::Blob(_) => "[BLOB]".to_string(),
     }
+}
+
+fn truncate_string(s: &str, max_length: usize) -> String {
+    if s.chars().count() <= max_length {
+        return s.to_string();
+    }
+
+    let truncated: String = s.chars().take(max_length).collect();
+    format!("{}...", truncated)
 }
