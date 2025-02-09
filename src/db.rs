@@ -193,17 +193,49 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
 }
 
 pub fn load_categorization_rules() -> Result<(), DbError> {
-    let yaml_str: String =
-        std::fs::read_to_string("data/input/mf-transaction-categorization-rules.yaml")
-            .map_err(DbError::Std)?;
+    println!("MF入出金明細の分類規則をロードします。");
+
+    let mut entries = fs::read_dir("data/input/mf-transaction-categorization-rules/")
+        .map_err(DbError::Std)?
+        .map(|entry| entry.map(|e| e.path()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(DbError::Std)?;
+    entries.retain(|path| {
+        path.extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| ext.eq_ignore_ascii_case("yaml") || ext.eq_ignore_ascii_case("yml"))
+            .unwrap_or(false)
+    });
+    entries.sort_by_key(|path| {
+        path.file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+    });
+
+    let mut conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
+    let db_transaction = conn.transaction().map_err(DbError::Sqlite)?;
+
+    for yaml_path in entries {
+        load_categorization_rules_yaml(&db_transaction, &yaml_path)?;
+    }
+
+    db_transaction.commit().map_err(DbError::Sqlite)?;
+
+    println!("MF入出金明細の分類規則をロードしました。");
+    Ok(())
+}
+
+fn load_categorization_rules_yaml(
+    db_transaction: &rusqlite::Transaction<'_>,
+    path: &std::path::PathBuf,
+) -> Result<(), DbError> {
+    println!("Processing file: {:?}", path);
+
+    let yaml_str: String = std::fs::read_to_string(path).map_err(DbError::Std)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str).map_err(DbError::Yaml)?;
 
     let rules = yaml["rules"].as_sequence().ok_or(DbError::Other(
         "YAML の `rules` が配列ではありません".into(),
     ))?;
-
-    let mut conn = rusqlite::Connection::open("data/transactions.db").map_err(DbError::Sqlite)?;
-    let db_transaction = conn.transaction().map_err(DbError::Sqlite)?;
 
     {
         let mut insert_statement = db_transaction
@@ -257,11 +289,6 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
         }
     }
 
-    db_transaction.commit().map_err(DbError::Sqlite)?;
-
-    println!(
-        "MF入出金明細の分類ルールを `mf_transaction_categorization_rule` テーブルに挿入しました"
-    );
     Ok(())
 }
 
