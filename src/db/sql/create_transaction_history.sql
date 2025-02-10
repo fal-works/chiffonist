@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS transaction_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY,
   occurrence_date TEXT NOT NULL,
   particulars TEXT NOT NULL DEFAULT '',
   amount INTEGER NOT NULL,

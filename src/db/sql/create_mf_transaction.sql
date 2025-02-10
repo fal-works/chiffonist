@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS mf_transaction (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY,
   include_flag INTEGER NOT NULL,
   occurrence_date TEXT NOT NULL,
   particulars TEXT NOT NULL,

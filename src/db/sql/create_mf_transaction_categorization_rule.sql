@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS mf_transaction_categorization_rule (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY,
   mf_include_flag INTEGER,
   mf_occurrence_date_min TEXT,
   mf_occurrence_date_max TEXT,
