@@ -362,15 +362,16 @@ pub fn print_transaction_summary() -> rusqlite::Result<()> {
             row.get::<_, String>(4)?,
             row.get::<_, String>(5)?,
             row.get::<_, String>(6)?,
+            row.get::<_, String>(7)?,
         ))
     })?;
 
     println!("transaction_history first 10 records:");
     for record in rows {
-        let (id, date, description, amount, category, sub_category, memo) = record?;
+        let (id, date, description, amount, data_source, category, sub_category, memo) = record?;
         println!(
-            "ID: {}, Date: {}, Description: {}, Amount: {}, Category: {}, Sub-category: {}, Memo: {}",
-            id, date, description, amount, category, sub_category, memo
+            "ID: {}, Date: {}, Description: {}, Amount: {}, Data source: {}, Category: {}, Sub-category: {}, Memo: {}",
+            id, date, description, amount, data_source, category, sub_category, memo
         );
     }
 
