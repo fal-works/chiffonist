@@ -169,3 +169,52 @@ fn load_categorization_rules_yaml(
 
     Ok(())
 }
+
+pub fn load_mapping_mf_financial_institution_to_channel() -> Result<(), DbError> {
+    println!("MF金融機関名からchannelコードへのマッピングをロードします。");
+
+    let mut conn = rusqlite::Connection::open("data/transactions.db")?;
+    let db_transaction = conn.transaction()?;
+
+    let yaml_path = "data/input/mf-financial-institution-to-channel-mapping.yaml";
+    load_mapping_mf_financial_institution_to_channel_yaml(&db_transaction, &yaml_path.into())?;
+
+    db_transaction.commit()?;
+
+    println!("MF金融機関名からchannelコードへのマッピングをロードしました。");
+    Ok(())
+}
+
+fn load_mapping_mf_financial_institution_to_channel_yaml(
+    db_transaction: &rusqlite::Transaction<'_>,
+    path: &std::path::PathBuf,
+) -> Result<(), DbError> {
+    println!("Processing file: {:?}", path);
+
+    let yaml_str: String = std::fs::read_to_string(path)?;
+    let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
+
+    let mapping = yaml["mapping"]
+        .as_mapping()
+        .ok_or("YAML の `mapping` がハッシュではありません")?;
+
+    {
+        let mut insert_statement = db_transaction.prepare(
+            "INSERT INTO mapping_mf_financial_institution_to_channel (
+                mf_financial_institution, channel
+            ) VALUES (?, ?)",
+        )?;
+
+        for (key, value) in mapping {
+            insert_statement.execute(rusqlite::params![
+                key.as_str()
+                    .ok_or_else(|| format!("Invalid key: {:?}", key))?,
+                value
+                    .as_str()
+                    .ok_or_else(|| format!("Invalid value: {:?}", value))?
+            ])?;
+        }
+    }
+
+    Ok(())
+}

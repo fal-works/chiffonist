@@ -1,15 +1,18 @@
 /*
  mf_transaction テーブルのレコードのうち、
- transaction_history テーブルに未登録なものについて、
+ transaction_history テーブルに未登録で、かつ
+ mapping_mf_financial_institution_to_channel テーブルに金融機関が登録済みのものについて、
  mf_transaction_categorization_rule テーブルに従って分類を行い、
  一時テーブル categorized_mf_transaction に保存します。
  */
-INSERT INTO categorized_mf_transaction (id, category, sub_category)
+INSERT INTO categorized_mf_transaction (id, channel, category, sub_category)
 SELECT sub.mf_id,
+  sub.channel,
   COALESCE(sub.new_category, 'none') AS category,
   COALESCE(sub.new_sub_category, 'none') AS sub_category
 FROM (
     SELECT mf.id AS mf_id,
+      chmap.channel,
       cr.new_category,
       cr.new_sub_category,
       ROW_NUMBER() OVER (
@@ -17,6 +20,9 @@ FROM (
         ORDER BY cr.id ASC
       ) AS rule_rank
     FROM mf_transaction mf
+      INNER JOIN mapping_mf_financial_institution_to_channel chmap ON (
+        mf.financial_institution = chmap.mf_financial_institution
+      )
       LEFT JOIN mf_transaction_categorization_rule cr ON (
         cr.mf_include_flag IS NULL
         OR mf.include_flag = cr.mf_include_flag

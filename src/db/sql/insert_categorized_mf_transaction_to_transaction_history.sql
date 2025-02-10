@@ -11,7 +11,7 @@ INSERT INTO transaction_history (
 SELECT mf.occurrence_date,
   mf.particulars,
   mf.amount,
-  'unknown',
+  ct.channel,
   ct.category,
   ct.sub_category,
   mf.memo,

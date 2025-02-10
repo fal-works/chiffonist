@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=mf-financial-institution-to-channel-mapping-schema.json
+
+mapping:
+  ナントカ銀行: nantokabank
+  ナントカカード: nantokacard
+  財布: wallet
