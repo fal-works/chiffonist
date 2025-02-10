@@ -18,20 +18,20 @@ FROM (
       ) AS rule_rank
     FROM mf_transaction mf
       LEFT JOIN mf_transaction_categorization_rule cr ON (
-        cr.mf_include IS NULL
-        OR mf.include = cr.mf_include
+        cr.mf_include_flag IS NULL
+        OR mf.include_flag = cr.mf_include_flag
       )
       AND (
-        cr.mf_date_min IS NULL
-        OR mf.date >= cr.mf_date_min
+        cr.mf_occurrence_date_min IS NULL
+        OR mf.occurrence_date >= cr.mf_occurrence_date_min
       )
       AND (
-        cr.mf_date_max IS NULL
-        OR mf.date <= cr.mf_date_max
+        cr.mf_occurrence_date_max IS NULL
+        OR mf.occurrence_date <= cr.mf_occurrence_date_max
       )
       AND (
-        cr.mf_description_glob IS NULL
-        OR mf.description GLOB cr.mf_description_glob
+        cr.mf_particulars_glob IS NULL
+        OR mf.particulars GLOB cr.mf_particulars_glob
       )
       AND (
         cr.mf_amount_min IS NULL
@@ -58,8 +58,8 @@ FROM (
         OR mf.memo GLOB cr.mf_memo_glob
       )
       AND (
-        cr.mf_transfer IS NULL
-        OR mf.transfer = cr.mf_transfer
+        cr.mf_transfer_flag IS NULL
+        OR mf.transfer_flag = cr.mf_transfer_flag
       )
       LEFT JOIN transaction_history th ON mf.id = th.mf_transaction_id
     WHERE th.mf_transaction_id IS NULL

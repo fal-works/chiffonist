@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS transaction_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  date TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT '',
+  occurrence_date TEXT NOT NULL,
+  particulars TEXT NOT NULL DEFAULT '',
   amount INTEGER NOT NULL,
-  data_source TEXT NOT NULL,
+  channel TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT 'none',
   sub_category TEXT NOT NULL DEFAULT 'none',
   memo TEXT NOT NULL DEFAULT '',

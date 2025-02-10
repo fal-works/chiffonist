@@ -113,8 +113,8 @@ pub fn insert_csv_to_db() -> Result<(), DbError> {
                 db_transaction
                     .execute(
                         "INSERT OR IGNORE INTO mf_transaction (
-                  include, date, description, amount, financial_institution,
-                  major_category, intermediate_category, memo, transfer, mf_original_id
+                  include_flag, occurrence_date, particulars, amount, financial_institution,
+                  major_category, intermediate_category, memo, transfer_flag, mf_original_id
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                         (
                             record[0]
@@ -172,20 +172,20 @@ pub fn print_mf_transaction_summary() -> rusqlite::Result<()> {
     for record in rows {
         let (
             id,
-            include,
-            date,
-            description,
+            include_flag,
+            occurrence_date,
+            particulars,
             amount,
             financial_institution,
             major_category,
             intermediate_category,
             memo,
-            transfer,
+            transfer_flag,
             mf_original_id,
         ) = record?;
         println!(
           "ID: {}, 計算対象: {}, 日付: {}, 内容: {}, 金額: {}, 金融機関: {}, 大項目: {}, 中項目: {}, メモ: {}, 振替: {}, MF ID: {}",
-          id, include, date, description, amount, financial_institution, major_category, intermediate_category, memo, transfer, mf_original_id
+          id, include_flag, occurrence_date, particulars, amount, financial_institution, major_category, intermediate_category, memo, transfer_flag, mf_original_id
       );
     }
 
@@ -241,10 +241,10 @@ fn load_categorization_rules_yaml(
         let mut insert_statement = db_transaction
             .prepare(
                 "INSERT INTO mf_transaction_categorization_rule (
-            mf_include, mf_date_min, mf_date_max, mf_description_glob,
+            mf_include_flag, mf_occurrence_date_min, mf_occurrence_date_max, mf_particulars_glob,
             mf_amount_min, mf_amount_max, mf_financial_institution,
             mf_major_category, mf_intermediate_category, mf_memo_glob,
-            mf_transfer, new_category, new_sub_category
+            mf_transfer_flag, new_category, new_sub_category
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .map_err(DbError::Sqlite)?;
@@ -368,10 +368,11 @@ pub fn print_transaction_summary() -> rusqlite::Result<()> {
 
     println!("transaction_history first 10 records:");
     for record in rows {
-        let (id, date, description, amount, data_source, category, sub_category, memo) = record?;
+        let (id, occurrence_date, particulars, amount, channel, category, sub_category, memo) =
+            record?;
         println!(
-            "ID: {}, Date: {}, Description: {}, Amount: {}, Data source: {}, Category: {}, Sub-category: {}, Memo: {}",
-            id, date, description, amount, data_source, category, sub_category, memo
+            "ID: {}, Date: {}, Particulars: {}, Amount: {}, Channel: {}, Category: {}, Sub-category: {}, Memo: {}",
+            id, occurrence_date, particulars, amount, channel, category, sub_category, memo
         );
     }
 

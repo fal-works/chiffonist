@@ -1,15 +1,15 @@
 INSERT INTO transaction_history (
-    date,
-    description,
+    occurrence_date,
+    particulars,
     amount,
-    data_source,
+    channel,
     category,
     sub_category,
     memo,
     mf_transaction_id
   )
-SELECT mf.date,
-  mf.description,
+SELECT mf.occurrence_date,
+  mf.particulars,
   mf.amount,
   'unknown',
   ct.category,
