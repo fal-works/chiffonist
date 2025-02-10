@@ -27,6 +27,12 @@ pub fn create_tables(clean: bool) -> Result<(), DbError> {
         include_str!("sql/create_mapping_mf_financial_institution_to_channel.sql"),
         clean,
     )?;
+    create_table(
+        &conn,
+        "map_channel_group_to_channel",
+        include_str!("sql/create_map_channel_group_to_channel.sql"),
+        clean,
+    )?;
 
     Ok(())
 }

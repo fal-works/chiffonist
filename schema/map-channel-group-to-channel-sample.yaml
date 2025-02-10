@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=map-channel-group-to-channel-schema.json
+
+mapping:
+  cash:
+    - yuucho-bank
+    - ufj-bank
+    - wallet
+  card:
+    - smbc-card
+    - view-card
+  ec:
+    - amazon

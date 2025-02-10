@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "description": "channel group コードから channel コードのリストへのマッピングです。",
+      "additionalProperties": {
+        "type": "array",
+        "description": "キーとして channel group コードを、値としてそのグループに属する channel コードのリストを記載します。",
+        "items": {
+          "type": "string",
+          "description": "channel コードを記載します。"
+        },
+        "minItems": 1
+      }
+    }
+  },
+  "required": [
+    "mapping"
+  ],
+  "additionalProperties": false
+}
