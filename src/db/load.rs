@@ -1,17 +1,11 @@
 use crate::db::error::DbError;
-use crate::db::utils;
 use std::fs;
 
 pub fn load_mf_transactions() -> Result<(), DbError> {
     println!("MoneyForwardの入出金明細をロードします。");
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
-    utils::create_table(
-        &conn,
-        "mf_transaction_addition",
-        include_str!("sql/create_mf_transaction_addition_tmp.sql"),
-        false,
-    )?;
+    conn.execute_batch(include_str!("sql/create_mf_transaction_addition_tmp.sql"))?;
 
     let db_transaction = conn.transaction()?;
     for entry in fs::read_dir("data/input/")? {
@@ -19,70 +13,81 @@ pub fn load_mf_transactions() -> Result<(), DbError> {
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("csv") {
-            println!("Processing file: {:?}", path);
+            load_mf_transactions_csv(&db_transaction, &path)?;
+        }
+    }
+    db_transaction.commit()?;
 
-            let file = fs::File::open(&path)?;
-            let transcoded_reader = encoding_rs_io::DecodeReaderBytesBuilder::new()
-                .encoding(Some(encoding_rs::SHIFT_JIS))
-                .build(file);
+    conn.execute_batch(include_str!(
+        "sql/insert_mf_transaction_addition_to_mf_transaction.sql"
+    ))?;
 
-            let mut reader = csv::ReaderBuilder::new()
-                .has_headers(true)
-                .from_reader(transcoded_reader);
+    println!("MoneyForwardの入出金明細をロードしました。");
+    Ok(())
+}
 
-            let headers = reader.headers()?.clone();
-            let expected_headers = [
-                "計算対象",
-                "日付",
-                "内容",
-                "金額（円）",
-                "保有金融機関",
-                "大項目",
-                "中項目",
-                "メモ",
-                "振替",
-                "ID",
-            ];
-            for i in 0..expected_headers.len() {
-                if headers[i] != *expected_headers[i] {
-                    return Err(DbError::Other(format!(
-                        "Expected header: {}, actual header: {}",
-                        &headers[i], expected_headers[i]
-                    )));
-                }
-            }
+fn load_mf_transactions_csv(
+    db_transaction: &rusqlite::Transaction<'_>,
+    path: &std::path::Path,
+) -> Result<(), DbError> {
+    println!("Processing file: {:?}", path);
 
-            for result in reader.records() {
-                let record = result?;
+    let file = fs::File::open(&path)?;
+    let transcoded_reader = encoding_rs_io::DecodeReaderBytesBuilder::new()
+        .encoding(Some(encoding_rs::SHIFT_JIS))
+        .build(file);
 
-                db_transaction.execute(
-                    "INSERT INTO mf_transaction_addition (
-                include_flag, occurrence_date, particulars, amount, financial_institution,
-                major_category, intermediate_category, memo, transfer_flag, mf_original_id
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-                    (
-                        record[0]
-                            .parse::<i32>()
-                            .map_err(|e: std::num::ParseIntError| e.to_string())?,
-                        &record[1],
-                        &record[2],
-                        record[3].parse::<i32>().map_err(|e| e.to_string())?,
-                        &record[4],
-                        &record[5],
-                        &record[6],
-                        record.get(7).unwrap_or(""),
-                        record[8].parse::<i32>().map_err(|e| e.to_string())?,
-                        &record[9],
-                    ),
-                )?;
-            }
+    let mut reader = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(transcoded_reader);
+
+    let headers = reader.headers()?.clone();
+    let expected_headers = [
+        "計算対象",
+        "日付",
+        "内容",
+        "金額（円）",
+        "保有金融機関",
+        "大項目",
+        "中項目",
+        "メモ",
+        "振替",
+        "ID",
+    ];
+    for i in 0..expected_headers.len() {
+        if headers[i] != *expected_headers[i] {
+            return Err(DbError::Other(format!(
+                "Expected header: {}, actual header: {}",
+                &headers[i], expected_headers[i]
+            )));
         }
     }
 
-    db_transaction.commit()?;
-    conn.execute_batch(include_str!("sql/insert_mf_transaction_addition_to_mf_transaction.sql"))?;
+    for result in reader.records() {
+        let record = result?;
 
-    println!("MoneyForwardの入出金明細をロードしました。");
+        db_transaction.execute(
+            "INSERT INTO mf_transaction_addition (
+                include_flag, occurrence_date, particulars, amount, financial_institution,
+                major_category, intermediate_category, memo, transfer_flag, mf_original_id
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            (
+                record[0]
+                    .parse::<i32>()
+                    .map_err(|e: std::num::ParseIntError| e.to_string())?,
+                &record[1],
+                &record[2],
+                record[3].parse::<i32>().map_err(|e| e.to_string())?,
+                &record[4],
+                &record[5],
+                &record[6],
+                record.get(7).unwrap_or(""),
+                record[8].parse::<i32>().map_err(|e| e.to_string())?,
+                &record[9],
+            ),
+        )?;
+    }
+
     Ok(())
 }
 
