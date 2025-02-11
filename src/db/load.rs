@@ -1,11 +1,20 @@
 use crate::db::error::DbError;
+use crate::db::utils;
 use std::fs;
 
 pub fn load_mf_transactions() -> Result<(), DbError> {
+    println!("MoneyForwardの入出金明細をロードします。");
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
-    let input_dir = "data/input/";
 
-    for entry in fs::read_dir(input_dir)? {
+    utils::create_table(
+        &conn,
+        "mf_transaction_addition",
+        include_str!("sql/create_mf_transaction_addition_tmp.sql"),
+        false,
+    )?;
+
+    let db_transaction = conn.transaction()?;
+    for entry in fs::read_dir("data/input/")? {
         let entry = entry?;
         let path = entry.path();
 
@@ -43,12 +52,11 @@ pub fn load_mf_transactions() -> Result<(), DbError> {
                 }
             }
 
-            let db_transaction = conn.transaction()?;
             for result in reader.records() {
                 let record = result?;
 
                 db_transaction.execute(
-                    "INSERT OR IGNORE INTO mf_transaction (
+                    "INSERT INTO mf_transaction_addition (
                 include_flag, occurrence_date, particulars, amount, financial_institution,
                 major_category, intermediate_category, memo, transfer_flag, mf_original_id
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
@@ -68,11 +76,13 @@ pub fn load_mf_transactions() -> Result<(), DbError> {
                     ),
                 )?;
             }
-            db_transaction.commit()?;
         }
     }
 
-    println!("CSV files have been inserted into the database.");
+    db_transaction.commit()?;
+    conn.execute_batch(include_str!("sql/insert_mf_transaction_addition_to_mf_transaction.sql"))?;
+
+    println!("MoneyForwardの入出金明細をロードしました。");
     Ok(())
 }
 
