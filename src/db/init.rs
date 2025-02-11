@@ -16,6 +16,12 @@ pub fn create_tables(clean: bool) -> Result<(), DbError> {
         include_str!("sql/create_transaction_history.sql"),
         clean,
     )?;
+    utils::create_view(
+        &conn,
+        "transaction_view",
+        include_str!("sql/create_transaction_view.sql"),
+        clean,
+    )?;
     utils::create_table(
         &conn,
         "mapping_mf_financial_institution_to_channel",
