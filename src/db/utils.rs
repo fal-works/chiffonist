@@ -1,6 +1,34 @@
 use crate::db::error::DbError;
 use std::io::Write;
 
+pub fn list_files_with_extensions(
+    dir: &str,
+    extensions: &[&str],
+) -> Result<Vec<std::path::PathBuf>, std::io::Error> {
+    let mut entries = Vec::new();
+
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+
+        let valid_extension = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| extensions.iter().any(|&e| ext.eq_ignore_ascii_case(e)))
+            .unwrap_or(false);
+
+        if valid_extension {
+            entries.push(path);
+        }
+    }
+
+    entries.sort_by_key(|path| {
+        path.file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+    });
+
+    Ok(entries)
+}
+
 pub fn confirm_continue() -> Result<bool, DbError> {
     let mut stdout = std::io::stdout();
     let stdin: std::io::Stdin = std::io::stdin();

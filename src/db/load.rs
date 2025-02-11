@@ -1,20 +1,19 @@
 use crate::db::error::DbError;
+use crate::db::utils;
 use std::fs;
 
 pub fn load_mf_transactions() -> Result<(), DbError> {
     println!("MoneyForwardの入出金明細をロードします。");
+
+    let csv_files = utils::list_files_with_extensions("data/input/mf-transactions/", &["csv"])?;
+
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
     conn.execute_batch(include_str!("sql/create_mf_transaction_addition_tmp.sql"))?;
 
     let db_transaction = conn.transaction()?;
-    for entry in fs::read_dir("data/input/")? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.extension().and_then(|s| s.to_str()) == Some("csv") {
-            load_mf_transactions_csv(&db_transaction, &path)?;
-        }
+    for csv_path in csv_files {
+        load_mf_transactions_csv(&db_transaction, &csv_path)?;
     }
     db_transaction.commit()?;
 
@@ -94,24 +93,15 @@ fn load_mf_transactions_csv(
 pub fn load_categorization_rules() -> Result<(), DbError> {
     println!("MF入出金明細の分類規則をロードします。");
 
-    let mut entries = fs::read_dir("data/input/mf-transaction-categorization-rules/")?
-        .map(|entry| entry.map(|e| e.path()))
-        .collect::<Result<Vec<_>, _>>()?;
-    entries.retain(|path| {
-        path.extension()
-            .and_then(|ext| ext.to_str())
-            .map(|ext| ext.eq_ignore_ascii_case("yaml") || ext.eq_ignore_ascii_case("yml"))
-            .unwrap_or(false)
-    });
-    entries.sort_by_key(|path| {
-        path.file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-    });
+    let yaml_files = utils::list_files_with_extensions(
+        "data/input/mf-transaction-categorization-rules/",
+        &["yaml", "yml"],
+    )?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    for yaml_path in entries {
+    for yaml_path in yaml_files {
         load_categorization_rules_yaml(&db_transaction, &yaml_path)?;
     }
 
