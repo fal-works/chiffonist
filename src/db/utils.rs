@@ -20,6 +20,23 @@ pub fn confirm_continue() -> Result<bool, DbError> {
     }
 }
 
+pub fn create_table(
+    conn: &rusqlite::Connection,
+    name: &str,
+    sql: &str,
+    clean: bool,
+) -> Result<(), DbError> {
+    if clean {
+        conn.execute(&format!("DROP TABLE IF EXISTS {name};"), [])?;
+    }
+
+    conn.execute_batch(sql)?;
+
+    println!("Table '{name}' created successfully.");
+
+    Ok(())
+}
+
 pub fn print_select_query(
     select_statement: &mut rusqlite::Statement<'_>,
     column_names: &[&str],
