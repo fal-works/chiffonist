@@ -41,6 +41,8 @@ pub fn print_transaction_summary() -> Result<(), DbError> {
         conn.prepare("SELECT * FROM transaction_history LIMIT 10;")?;
     let column_names = [
         "ID",
+        "年",
+        "月",
         "日付",
         "摘要",
         "金額",

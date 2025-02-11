@@ -47,7 +47,7 @@ fn create_table(
         conn.execute(&format!("DROP TABLE IF EXISTS {name};"), [])?;
     }
 
-    conn.execute(sql, [])?;
+    conn.execute_batch(sql)?;
 
     println!("Table '{name}' prepared successfully.");
 
