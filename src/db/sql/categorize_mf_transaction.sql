@@ -2,19 +2,29 @@
  mf_transaction テーブルのレコードのうち、
  transaction_history テーブルに未登録で、かつ
  mapping_mf_financial_institution_to_channel テーブルに金融機関が登録済みのものについて、
- mf_transaction_categorization_rule テーブルに従って分類を行い、
+ mf_transaction_manual_categorization, mf_transaction_categorization_rule テーブルに従って分類を行い、
  一時テーブル categorized_mf_transaction に保存します。
  */
 INSERT INTO categorized_mf_transaction (id, channel, category, sub_category)
-SELECT sub.mf_id,
-  sub.channel,
-  COALESCE(sub.new_category, 'none') AS category,
-  COALESCE(sub.new_sub_category, 'none') AS sub_category
+SELECT q.id,
+  q.channel,
+  COALESCE(
+    q.category_manual,
+    q.category_auto,
+    'none'
+  ) AS category,
+  COALESCE(
+    q.sub_category_manual,
+    q.sub_category_auto,
+    'none'
+  ) AS sub_category
 FROM (
-    SELECT mf.id AS mf_id,
+    SELECT mf.id AS id,
       chmap.channel,
-      cr.new_category,
-      cr.new_sub_category,
+      mc.category AS category_manual,
+      mc.sub_category AS sub_category_manual,
+      cr.new_category AS category_auto,
+      cr.new_sub_category AS sub_category_auto,
       ROW_NUMBER() OVER (
         PARTITION BY mf.id
         ORDER BY cr.id ASC
@@ -22,6 +32,9 @@ FROM (
     FROM mf_transaction mf
       INNER JOIN mapping_mf_financial_institution_to_channel chmap ON (
         mf.financial_institution = chmap.mf_financial_institution
+      )
+      LEFT JOIN mf_transaction_manual_categorization mc ON (
+        mf.mf_original_id = mc.mf_original_id
       )
       LEFT JOIN mf_transaction_categorization_rule cr ON (
         cr.mf_include_flag IS NULL
@@ -69,5 +82,5 @@ FROM (
       )
       LEFT JOIN transaction_history th ON mf.id = th.mf_transaction_id
     WHERE th.mf_transaction_id IS NULL
-  ) sub
-WHERE sub.rule_rank = 1;
+  ) q
+WHERE q.rule_rank = 1;

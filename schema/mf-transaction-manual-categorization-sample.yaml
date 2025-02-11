@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=mf-transaction-manual-categorization-schema.json
+
+mapping:
+  kdWbJbhgjzh8Hq9tRBjAFjNqArRtFEiaJfaBRR95CiN:
+    category: hobby
+    sub-category: books
+  cHBuNCDQLRJBaWFJ_2HRSWpa7a8CnLnXo7-inXi1cx-:
+    category: tax

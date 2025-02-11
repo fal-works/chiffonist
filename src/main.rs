@@ -8,6 +8,7 @@ fn main() {
     db::print::print_mf_transaction_summary().unwrap();
     db::load::load_mapping_mf_financial_institution_to_channel().unwrap();
     db::load::load_map_channel_group_to_channel().unwrap();
+    db::load::load_mf_transaction_manual_categorization().unwrap();
     db::load::load_categorization_rules().unwrap();
     if db::transform::etl_mf_transaction_to_transaction_history().unwrap() {
         db::print::print_transaction_summary().unwrap();

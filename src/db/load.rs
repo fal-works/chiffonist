@@ -288,3 +288,69 @@ fn load_map_channel_group_to_channel_yaml(
 
     Ok(())
 }
+
+pub fn load_mf_transaction_manual_categorization() -> Result<(), DbError> {
+    println!("MF入出金明細の手動分類データをロードします。");
+
+    let mut conn = rusqlite::Connection::open("data/transactions.db")?;
+    let db_transaction = conn.transaction()?;
+
+    let yaml_path = "data/input/mf-transaction-manual-categorization.yaml";
+    load_mf_transaction_manual_categorization_yaml(
+        &db_transaction,
+        std::path::Path::new(yaml_path),
+    )?;
+
+    db_transaction.commit()?;
+
+    println!("MF入出金明細の手動分類データをロードしました。");
+    Ok(())
+}
+
+fn load_mf_transaction_manual_categorization_yaml(
+    db_transaction: &rusqlite::Transaction<'_>,
+    path: &std::path::Path,
+) -> Result<(), DbError> {
+    println!("Processing file: {:?}", path);
+
+    let yaml_str: String = std::fs::read_to_string(path)?;
+    let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
+
+    let mapping = yaml["mapping"]
+        .as_mapping()
+        .ok_or_else(|| DbError::Other("YAML の `mapping` がハッシュではありません".into()))?;
+
+    let mut insert_statement = db_transaction.prepare(
+        "INSERT INTO mf_transaction_manual_categorization (
+            mf_original_id, category, sub_category
+        ) VALUES (?, ?, ?)",
+    )?;
+
+    for (key, value) in mapping {
+        let id = key
+            .as_str()
+            .ok_or_else(|| format!("Invalid key: {:?}", key))?;
+
+        let categories = value
+            .as_mapping()
+            .ok_or_else(|| format!("Invalid value for id '{}': {:?}", id, value))?;
+        let category = categories
+            .get("category")
+            .ok_or_else(|| format!("category がありません"))
+            .and_then(|v| {
+                v.as_str()
+                    .ok_or_else(|| format!("Invalid category for id {}: {:?}", id, v))
+            })?;
+        let sub_category = categories
+            .get("sub-category")
+            .map(|v| {
+                v.as_str()
+                    .ok_or_else(|| format!("Invalid category for id {}: {:?}", id, v))
+            })
+            .transpose()?;
+
+        insert_statement.execute(rusqlite::params!(id, category, sub_category))?;
+    }
+
+    Ok(())
+}
