@@ -10,7 +10,7 @@ pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
 
     let to_be_inserted = if select_unknown_insttitutions.exists([])? {
         println!("下記の金融機関は channel がマッピングされていないため、処理対象外となります。");
-        utils::print_select_query(&mut select_unknown_insttitutions, &["[保有金融機関]"])?;
+        utils::print_select_query(&mut select_unknown_insttitutions, &[("[保有金融機関]", 0)])?;
         utils::confirm_continue()?
     } else {
         conn.execute(
@@ -27,17 +27,17 @@ pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
             utils::print_select_query(
                 &mut select_uncategorized,
                 &[
-                    "id",
-                    "計算対象",
-                    "日付",
-                    "内容",
-                    "金額（円）",
-                    "保有金融機関",
-                    "大項目",
-                    "中項目",
-                    "メモ",
-                    "振替",
-                    // "MF ID",
+                    ("id", 0),
+                    ("計算対象", 0),
+                    ("日付", 0),
+                    ("内容", 20),
+                    ("金額", 0),
+                    ("保有金融機関", 0),
+                    ("大項目", 0),
+                    ("中項目", 0),
+                    ("メモ", 0),
+                    ("振替", 0),
+                    ("MF ID", 0),
                 ],
             )?;
             utils::confirm_continue()?

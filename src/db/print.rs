@@ -10,20 +10,20 @@ pub fn print_mf_transaction_summary() -> Result<(), DbError> {
     println!("mf_transaction first 10 records:");
     let mut stmt: rusqlite::Statement<'_> =
         conn.prepare("SELECT * FROM mf_transaction LIMIT 10;")?;
-    let column_names = [
-        "ID",
-        "計算対象",
-        "日付",
-        "内容",
-        "金額",
-        "金融機関",
-        "大項目",
-        "中項目",
-        "メモ",
-        "振替",
+    let columns = [
+        ("ID", 0),
+        ("計算対象", 0),
+        ("日付", 0),
+        ("内容", 20),
+        ("金額", 0),
+        ("金融機関", 0),
+        ("大項目", 0),
+        ("中項目", 0),
+        ("メモ", 20),
+        ("振替", 0),
         // "MF ID",
     ];
-    utils::print_select_query(&mut stmt, &column_names)?;
+    utils::print_select_query(&mut stmt, &columns)?;
 
     Ok(())
 }
@@ -39,19 +39,19 @@ pub fn print_transaction_summary() -> Result<(), DbError> {
     println!("transaction_history first 10 records:");
     let mut stmt: rusqlite::Statement<'_> =
         conn.prepare("SELECT * FROM transaction_history LIMIT 10;")?;
-    let column_names = [
-        "ID",
-        "年",
-        "月",
-        "日付",
-        "摘要",
-        "金額",
-        "チャネル",
-        "カテゴリー",
-        "サブカテゴリー",
-        "メモ",
+    let columns = [
+        ("ID", 0),
+        ("年", 0),
+        ("月", 0),
+        ("日付", 0),
+        ("摘要", 20),
+        ("金額", 0),
+        ("チャネル", 0),
+        ("カテゴリー", 0),
+        ("サブカテゴリー", 0),
+        ("メモ", 20),
     ];
-    utils::print_select_query(&mut stmt, &column_names)?;
+    utils::print_select_query(&mut stmt, &columns)?;
 
     Ok(())
 }

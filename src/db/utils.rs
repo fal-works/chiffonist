@@ -65,16 +65,23 @@ pub fn create_table(
     Ok(())
 }
 
+/// 引数 `columns` では、各カラムについて、ヘッダーの表示名と値の最大文字数をタプルで渡します。
+/// 最大文字数が 0 であれば切り詰めを行いません。
 pub fn print_select_query(
     select_statement: &mut rusqlite::Statement<'_>,
-    column_names: &[&str],
+    columns: &[(&str, usize)],
 ) -> Result<(), DbError> {
-    let column_count = column_names.len();
+    let column_count = columns.len();
     let rows = select_statement.query_map([], |row| {
         (0..column_count)
             .map(|i| {
                 let s = db_value_to_string(row.get(i)?);
-                Ok(truncate_string(&s, 30))
+                let (_, max_len) = columns[i];
+                if max_len > 0 {
+                    Ok(truncate_string(&s, max_len))
+                } else {
+                    Ok(s)
+                }
             })
             .collect::<Result<Vec<_>, _>>()
     })?;
@@ -83,7 +90,8 @@ pub fn print_select_query(
     stdout.write_all(b"\n")?;
 
     let mut writer = tabwriter::TabWriter::new(std::io::stdout());
-    writeln!(writer, "{}", column_names.join("\t"))?;
+    let headers: Vec<&str> = columns.iter().map(|col| col.0).collect();
+    writeln!(writer, "{}", headers.join("\t"))?;
     for row in rows {
         writeln!(writer, "{}", row?.join("\t"))?;
     }
