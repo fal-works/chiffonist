@@ -111,11 +111,22 @@ fn db_value_to_string(value: rusqlite::types::Value) -> String {
     }
 }
 
-fn truncate_string(s: &str, max_length: usize) -> String {
-    if s.chars().count() <= max_length {
-        return s.to_string();
+/// 文字数を切り詰めます。
+/// 切り詰め発生時には末尾に `"..."` を付与します。
+/// 簡易的に、ASCII文字以外は2文字としてカウントします。
+fn truncate_string(s: &str, max_width: usize) -> String {
+    let mut width = 0;
+    let mut result = String::new();
+
+    for ch in s.chars() {
+        let char_width = if ch.is_ascii() { 1 } else { 2 };
+        if width + char_width > max_width {
+            result.push_str("...");
+            break;
+        }
+        result.push(ch);
+        width += char_width;
     }
 
-    let truncated: String = s.chars().take(max_length).collect();
-    format!("{}...", truncated)
+    result
 }

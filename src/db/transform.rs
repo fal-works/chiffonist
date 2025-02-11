@@ -27,10 +27,9 @@ pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
             utils::print_select_query(
                 &mut select_uncategorized,
                 &[
-                    ("id", 0),
                     ("計算対象", 0),
                     ("日付", 0),
-                    ("内容", 20),
+                    ("内容", 30),
                     ("金額", 0),
                     ("保有金融機関", 0),
                     ("大項目", 0),
