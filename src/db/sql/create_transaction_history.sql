@@ -11,4 +11,7 @@ CREATE TABLE IF NOT EXISTS transaction_history (
   memo TEXT NOT NULL DEFAULT '',
   mf_transaction_id INTEGER UNIQUE -- FK
 );
-CREATE INDEX IF NOT EXISTS idx_transaction_history_year_month ON transaction_history(occurrence_year, occurrence_month);
+CREATE INDEX IF NOT EXISTS idx_transaction_history_year_month ON transaction_history (occurrence_year, occurrence_month);
+CREATE INDEX IF NOT EXISTS idx_transaction_history_occurrence_date ON transaction_history (occurrence_date);
+CREATE INDEX IF NOT EXISTS idx_transaction_history_channel ON transaction_history (channel);
+CREATE INDEX IF NOT EXISTS idx_transaction_history_categories ON transaction_history (category, sub_category);
