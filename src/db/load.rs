@@ -228,7 +228,7 @@ fn load_mapping_mf_financial_institution_to_channel_yaml(
 }
 
 pub fn load_map_channel_group_to_channel() -> Result<(), DbError> {
-    println!("MF金融機関名からchannelコードへのマッピングをロードします。");
+    println!("channel group コードから channel コードへのマッピングをロードします。");
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
@@ -238,7 +238,7 @@ pub fn load_map_channel_group_to_channel() -> Result<(), DbError> {
 
     db_transaction.commit()?;
 
-    println!("MF金融機関名からchannelコードへのマッピングをロードしました。");
+    println!("channel group コードから channel コードへのマッピングをロードしました。");
     Ok(())
 }
 
