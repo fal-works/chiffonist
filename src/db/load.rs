@@ -56,8 +56,8 @@ fn load_mf_transactions_csv(
     for i in 0..expected_headers.len() {
         if headers[i] != *expected_headers[i] {
             return Err(DbError::Other(format!(
-                "Expected header: {}, actual header: {}",
-                &headers[i], expected_headers[i]
+                "Column index: {i}, Expected header: {}, actual header: {}",
+                expected_headers[i], &headers[i]
             )));
         }
     }
