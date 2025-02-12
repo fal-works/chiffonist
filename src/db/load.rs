@@ -74,7 +74,7 @@ fn load_mf_transactions_csv(
                 record[0]
                     .parse::<i32>()
                     .map_err(|e: std::num::ParseIntError| e.to_string())?,
-                &record[1],
+                utils::normalize_slashed_date(&record[1])?,
                 &record[2],
                 record[3].parse::<i32>().map_err(|e| e.to_string())?,
                 &record[4],

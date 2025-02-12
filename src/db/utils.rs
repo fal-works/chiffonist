@@ -1,6 +1,38 @@
 use crate::db::error::DbError;
 use std::io::Write;
 
+/// `YYYY/MM/DD` または `Y/M/D` 形式の年月日の文字列を `YYYY-MM-DD` 形式に変換します。
+/// 上記以外の形式であれば `Err` を返します。
+pub fn normalize_slashed_date(input: &str) -> Result<String, String> {
+    let parts: Vec<&str> = input.split('/').collect();
+
+    if parts.len() != 3 {
+        return Err(format!("Invalid date format: {}", input));
+    }
+
+    let year = parts[0]
+        .parse::<u32>()
+        .map_err(|_| format!("Invalid year: {}", parts[0]))?;
+    let month = parts[1]
+        .parse::<u32>()
+        .map_err(|_| format!("Invalid month: {}", parts[1]))?;
+    let day = parts[2]
+        .parse::<u32>()
+        .map_err(|_| format!("Invalid day: {}", parts[2]))?;
+
+    if !(1..=9999).contains(&year) {
+        return Err(format!("Year out of range: {}", year));
+    }
+    if !(1..=12).contains(&month) {
+        return Err(format!("Month out of range: {}", month));
+    }
+    if !(1..=31).contains(&day) {
+        return Err(format!("Day out of range: {}", day));
+    }
+
+    Ok(format!("{:04}-{:02}-{:02}", year, month, day))
+}
+
 pub fn list_files_with_extensions(
     dir: &str,
     extensions: &[&str],
