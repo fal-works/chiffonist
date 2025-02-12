@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "アマゾン注文履歴フィルタ（デジタル）注文データと、付与したいカテゴリー・サブカテゴリーとのマッピングです。",
+  "properties": {
+    "mapping": {
+      "type": "array",
+      "description": "手動分類のリストです。",
+      "items": {
+        "type": "object",
+        "properties": {
+          "if": {
+            "type": "object",
+            "description": "この分類の条件群です。該当する場合に set ブロックの値が設定されます。",
+            "properties": {
+              "注文番号": {
+                "type": "string",
+                "description": "CSVの「注文番号」の値がこの値と一致する必要があることを表します。"
+              },
+              "商品名": {
+                "type": "string",
+                "description": "CSVの「商品名」の値がこの値と一致する必要があることを表します。"
+              }
+            },
+            "required": [
+              "注文番号",
+              "商品名"
+            ],
+            "additionalProperties": false
+          },
+          "set": {
+            "type": "object",
+            "description": "この分類規則の if ブロックの条件に合致した明細に対して設定する分類コードです。 category は設定必須です。",
+            "properties": {
+              "category": {
+                "type": "string",
+                "description": "条件に合致した場合に設定するカテゴリーのコードです。"
+              },
+              "sub-category": {
+                "type": "string",
+                "description": "条件に合致した場合に設定するサブカテゴリーのコードです。"
+              }
+            },
+            "required": [
+              "category"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "set"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "mapping"
+  ],
+  "additionalProperties": false
+}

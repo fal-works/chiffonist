@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=amazon-ohfd-credit-card-to-channel-mapping-schema.json
+
+mapping:
+  下4桁 0000: amazon-main-card
+  下4桁 0001: amazon-sub-card

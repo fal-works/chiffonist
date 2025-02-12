@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=amazon-ohf-digital-manual-categorization-schema.json
+
+mapping:
+  - if:
+      注文番号: D01-3123327-6644407
+      商品名: ダンジョン飯 13巻 (HARTA COMIX)
+    set:
+      category: hobbby
+      sub-category: book
+  - if:
+      注文番号: D01-3123327-6644408
+      商品名: ダンジョン飯 14巻 (HARTA COMIX)
+    set:
+      category: hobbby
+      sub-category: book

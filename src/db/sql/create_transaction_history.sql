@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS transaction_history (
   category TEXT NOT NULL DEFAULT 'none',
   sub_category TEXT NOT NULL DEFAULT 'none',
   memo TEXT NOT NULL DEFAULT '',
-  mf_transaction_id INTEGER UNIQUE -- FK
+  mf_transaction_id INTEGER UNIQUE, -- REFERENCES mf_transaction(id)
+  amazon_ohfd_id INTEGER UNIQUE -- REFERENCES amazon_ohfd(id)
 );
 CREATE INDEX IF NOT EXISTS idx_transaction_history_year_month ON transaction_history (occurrence_year, occurrence_month);
 CREATE INDEX IF NOT EXISTS idx_transaction_history_occurrence_date ON transaction_history (occurrence_date);

@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "description": "アマゾン注文履歴フィルタ（デジタル）の「クレカ種類」の値から channel コードへのマッピングです。",
+      "additionalProperties": {
+        "type": "string",
+        "description": "キーとしてアマゾン注文履歴フィルタ（デジタル）の「クレカ種類」の文字列を、値として変換先の channel コード（任意の文字列）を記載してください。"
+      }
+    }
+  },
+  "required": [
+    "mapping"
+  ],
+  "additionalProperties": false
+}

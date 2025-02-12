@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=amazon-ohf-digital-categorization-rules-schema.json
+
+rules:
+  - if:
+      商品名: "*コミック*"
+    set:
+      category: hobbby
+      sub-category: book
+
+  - if:
+      商品名: （ポイント）
+    set:
+      category: point-card
