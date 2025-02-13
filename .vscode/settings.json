@@ -1,5 +1,8 @@
 {
   "files.trimTrailingWhitespace": true,
+  "[rust]": {
+    "editor.indentSize": 4,
+  },
   "sqltools.connections": [
     {
       "previewLimit": 50,
