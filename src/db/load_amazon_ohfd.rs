@@ -5,7 +5,7 @@ use std::fs;
 pub fn load_amazon_ohfd() -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) のCSVをロードします。");
 
-    let csv_files = utils::list_files_with_extensions("data/input/amazon-ohfd/", &["csv"])?;
+    let csv_files = utils::list_files_with_extensions("data/input/amazon-ohfd/transactions/", &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
@@ -94,7 +94,7 @@ pub fn load_amazon_ohfd_categorization_rules() -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) の分類規則をロードします。");
 
     let yaml_files = utils::list_files_with_extensions(
-        "data/input/amazon-ohfd-categorization-rules/",
+        "data/input/amazon-ohfd/transaction-categorization-rules/",
         &["yaml", "yml"],
     )?;
 
@@ -176,7 +176,7 @@ pub fn load_mapping_amazon_ohfd_credit_card_to_channel() -> Result<(), DbError> 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/amazon-ohfd-credit-card-to-channel-mapping.yaml";
+    let yaml_path = "data/input/amazon-ohfd/channel-mapping-from-credit-card.yaml";
     load_mapping_amazon_ohfd_credit_card_to_channel_yaml(
         &db_transaction,
         std::path::Path::new(yaml_path),
@@ -228,7 +228,7 @@ pub fn load_amazon_ohfd_manual_categorization() -> Result<(), DbError> {
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/amazon-ohfd-manual-categorization.yaml";
+    let yaml_path = "data/input/amazon-ohfd/transaction-manual-categorization.yaml";
     load_amazon_ohfd_manual_categorization_yaml(&db_transaction, std::path::Path::new(yaml_path))?;
 
     db_transaction.commit()?;

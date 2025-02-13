@@ -5,7 +5,7 @@ use std::fs;
 pub fn load_mf_transactions() -> Result<(), DbError> {
     println!("MoneyForwardの入出金明細をロードします。");
 
-    let csv_files = utils::list_files_with_extensions("data/input/mf-transactions/", &["csv"])?;
+    let csv_files = utils::list_files_with_extensions("data/input/money-forward/transactions/", &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
@@ -94,7 +94,7 @@ pub fn load_categorization_rules() -> Result<(), DbError> {
     println!("MF入出金明細の分類規則をロードします。");
 
     let yaml_files = utils::list_files_with_extensions(
-        "data/input/mf-transaction-categorization-rules/",
+        "data/input/money-forward//transaction-categorization-rules/",
         &["yaml", "yml"],
     )?;
 
@@ -181,7 +181,7 @@ pub fn load_mapping_mf_financial_institution_to_channel() -> Result<(), DbError>
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/mf-financial-institution-to-channel-mapping.yaml";
+    let yaml_path = "data/input/money-forward/channel-mapping-from-financial-institution.yaml";
     load_mapping_mf_financial_institution_to_channel_yaml(
         &db_transaction,
         std::path::Path::new(yaml_path),
@@ -233,7 +233,7 @@ pub fn load_map_channel_group_to_channel() -> Result<(), DbError> {
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/map-channel-group-to-channel.yaml";
+    let yaml_path = "data/input/channel-groups.yaml";
     load_map_channel_group_to_channel_yaml(&db_transaction, std::path::Path::new(yaml_path))?;
 
     db_transaction.commit()?;
@@ -295,7 +295,7 @@ pub fn load_mf_transaction_manual_categorization() -> Result<(), DbError> {
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/mf-transaction-manual-categorization.yaml";
+    let yaml_path = "data/input/money-forward/transaction-manual-categorization.yaml";
     load_mf_transaction_manual_categorization_yaml(
         &db_transaction,
         std::path::Path::new(yaml_path),
