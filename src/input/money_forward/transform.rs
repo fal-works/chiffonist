@@ -1,5 +1,5 @@
-use crate::db::error::DbError;
-use crate::db::utils;
+use crate::error::DbError;
+use crate::utils;
 
 pub fn etl_mf_transaction_to_transaction_history() -> Result<bool, DbError> {
     let conn = rusqlite::Connection::open("data/transactions.db")?;

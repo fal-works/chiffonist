@@ -1,4 +1,4 @@
-use crate::db::error::DbError;
+use crate::error::DbError;
 use std::io::Write;
 
 /// `YYYY/MM/DD` または `Y/M/D` 形式の年月日の文字列を `YYYY-MM-DD` 形式に変換します。

@@ -1,11 +1,12 @@
-use crate::db::error::DbError;
-use crate::db::utils;
+use crate::error::DbError;
+use crate::utils;
 use std::fs;
 
 pub fn load_amazon_ohfd() -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) のCSVをロードします。");
 
-    let csv_files = utils::list_files_with_extensions("data/input/amazon-ohfd/transactions/", &["csv"])?;
+    let csv_files =
+        utils::list_files_with_extensions("data/input/amazon-ohfd/transactions/", &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
