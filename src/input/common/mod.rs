@@ -8,7 +8,7 @@ pub fn create_tables(clean: bool) -> Result<(), DbError> {
 }
 
 pub fn load_files() -> Result<(), DbError> {
-    load::load_map_channel_group_to_channel()?;
+    load::load_map_channel_group_to_channel("data/input/channel-groups.yaml")?;
 
     Ok(())
 }

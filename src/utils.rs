@@ -33,8 +33,8 @@ pub fn normalize_slashed_date(input: &str) -> Result<String, String> {
     Ok(format!("{:04}-{:02}-{:02}", year, month, day))
 }
 
-pub fn list_files_with_extensions(
-    dir: &str,
+pub fn list_files_with_extensions<P: AsRef<std::path::Path>>(
+    dir: P,
     extensions: &[&str],
 ) -> Result<Vec<std::path::PathBuf>, std::io::Error> {
     let mut entries = Vec::new();

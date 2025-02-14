@@ -1,12 +1,12 @@
 use crate::error::DbError;
 use crate::utils;
 use std::fs;
+use std::path::Path;
 
-pub fn load_amazon_ohfd() -> Result<(), DbError> {
+pub fn load_amazon_ohfd<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) のCSVをロードします。");
 
-    let csv_files =
-        utils::list_files_with_extensions("data/input/amazon-ohfd/transactions/", &["csv"])?;
+    let csv_files = utils::list_files_with_extensions(dir, &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
@@ -26,13 +26,13 @@ pub fn load_amazon_ohfd() -> Result<(), DbError> {
     Ok(())
 }
 
-fn load_amazon_ohfd_csv(
+fn load_amazon_ohfd_csv<P: AsRef<Path>>(
     db_transaction: &rusqlite::Transaction<'_>,
-    path: &std::path::Path,
+    csv_path: P,
 ) -> Result<(), DbError> {
-    println!("Processing file: {:?}", path);
+    println!("Processing file: {:?}", csv_path.as_ref());
 
-    let file = fs::File::open(&path)?;
+    let file = fs::File::open(csv_path)?;
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(file);
@@ -91,13 +91,10 @@ fn load_amazon_ohfd_csv(
     Ok(())
 }
 
-pub fn load_amazon_ohfd_categorization_rules() -> Result<(), DbError> {
+pub fn load_amazon_ohfd_categorization_rules<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) の分類規則をロードします。");
 
-    let yaml_files = utils::list_files_with_extensions(
-        "data/input/amazon-ohfd/transaction-categorization-rules/",
-        &["yaml", "yml"],
-    )?;
+    let yaml_files = utils::list_files_with_extensions(dir, &["yaml", "yml"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
@@ -112,13 +109,13 @@ pub fn load_amazon_ohfd_categorization_rules() -> Result<(), DbError> {
     Ok(())
 }
 
-fn load_categorization_rules_yaml(
+fn load_categorization_rules_yaml<P: AsRef<Path>>(
     db_transaction: &rusqlite::Transaction<'_>,
-    path: &std::path::PathBuf,
+    yaml_path: P,
 ) -> Result<(), DbError> {
-    println!("Processing file: {:?}", path);
+    println!("Processing file: {:?}", yaml_path.as_ref());
 
-    let yaml_str: String = std::fs::read_to_string(path)?;
+    let yaml_str: String = std::fs::read_to_string(yaml_path)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
 
     let rules = yaml["rules"]
@@ -171,17 +168,15 @@ fn load_categorization_rules_yaml(
     Ok(())
 }
 
-pub fn load_mapping_amazon_ohfd_credit_card_to_channel() -> Result<(), DbError> {
+pub fn load_mapping_amazon_ohfd_credit_card_to_channel<P: AsRef<Path>>(
+    yaml_path: P,
+) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) の「クレカ種類」からchannelコードへのマッピングをロードします。");
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/amazon-ohfd/channel-mapping-from-credit-card.yaml";
-    load_mapping_amazon_ohfd_credit_card_to_channel_yaml(
-        &db_transaction,
-        std::path::Path::new(yaml_path),
-    )?;
+    load_mapping_amazon_ohfd_credit_card_to_channel_yaml(&db_transaction, yaml_path)?;
 
     db_transaction.commit()?;
 
@@ -189,13 +184,13 @@ pub fn load_mapping_amazon_ohfd_credit_card_to_channel() -> Result<(), DbError> 
     Ok(())
 }
 
-fn load_mapping_amazon_ohfd_credit_card_to_channel_yaml(
+fn load_mapping_amazon_ohfd_credit_card_to_channel_yaml<P: AsRef<Path>>(
     db_transaction: &rusqlite::Transaction<'_>,
-    path: &std::path::Path,
+    yaml_path: P,
 ) -> Result<(), DbError> {
-    println!("Processing file: {:?}", path);
+    println!("Processing file: {:?}", yaml_path.as_ref());
 
-    let yaml_str: String = std::fs::read_to_string(path)?;
+    let yaml_str: String = std::fs::read_to_string(yaml_path)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
 
     let mapping = yaml["mapping"]
@@ -223,14 +218,13 @@ fn load_mapping_amazon_ohfd_credit_card_to_channel_yaml(
     Ok(())
 }
 
-pub fn load_amazon_ohfd_manual_categorization() -> Result<(), DbError> {
+pub fn load_amazon_ohfd_manual_categorization<P: AsRef<Path>>(yaml_path: P) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) の手動分類データをロードします。");
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/amazon-ohfd/transaction-manual-categorization.yaml";
-    load_amazon_ohfd_manual_categorization_yaml(&db_transaction, std::path::Path::new(yaml_path))?;
+    load_amazon_ohfd_manual_categorization_yaml(&db_transaction, yaml_path)?;
 
     db_transaction.commit()?;
 
@@ -238,13 +232,13 @@ pub fn load_amazon_ohfd_manual_categorization() -> Result<(), DbError> {
     Ok(())
 }
 
-fn load_amazon_ohfd_manual_categorization_yaml(
+fn load_amazon_ohfd_manual_categorization_yaml<P: AsRef<Path>>(
     db_transaction: &rusqlite::Transaction<'_>,
-    path: &std::path::Path,
+    yaml_path: P,
 ) -> Result<(), DbError> {
-    println!("Processing file: {:?}", path);
+    println!("Processing file: {:?}", yaml_path.as_ref());
 
-    let yaml_str: String = std::fs::read_to_string(path)?;
+    let yaml_str: String = std::fs::read_to_string(yaml_path)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str)?;
 
     let mapping = yaml["mapping"]

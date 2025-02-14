@@ -1,13 +1,13 @@
 use crate::error::DbError;
+use std::path::Path;
 
-pub fn load_map_channel_group_to_channel() -> Result<(), DbError> {
+pub fn load_map_channel_group_to_channel<P: AsRef<Path>>(yaml_path: P) -> Result<(), DbError> {
     println!("channel group コードから channel コードへのマッピングをロードします。");
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;
 
-    let yaml_path = "data/input/channel-groups.yaml";
-    load_map_channel_group_to_channel_yaml(&db_transaction, std::path::Path::new(yaml_path))?;
+    load_map_channel_group_to_channel_yaml(&db_transaction, yaml_path)?;
 
     db_transaction.commit()?;
 
@@ -15,13 +15,13 @@ pub fn load_map_channel_group_to_channel() -> Result<(), DbError> {
     Ok(())
 }
 
-fn load_map_channel_group_to_channel_yaml(
+fn load_map_channel_group_to_channel_yaml<P: AsRef<Path>>(
     db_transaction: &rusqlite::Transaction<'_>,
-    path: &std::path::Path,
+    yaml_path: P,
 ) -> Result<(), DbError> {
-    println!("Processing file: {:?}", path);
+    println!("Processing file: {:?}", yaml_path.as_ref());
 
-    let yaml_str: String = std::fs::read_to_string(path).map_err(DbError::Std)?;
+    let yaml_str: String = std::fs::read_to_string(yaml_path).map_err(DbError::Std)?;
     let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml_str).map_err(DbError::Yaml)?;
 
     let mapping = yaml["mapping"]
