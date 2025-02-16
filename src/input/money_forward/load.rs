@@ -6,7 +6,7 @@ use std::path::Path;
 pub fn load_mf_transactions<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("MoneyForwardの入出金明細をロードします。");
 
-    let csv_files = utils::list_files_with_extensions(dir, &["csv"])?;
+    let csv_files = utils::io::list_files_with_extensions(dir, &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
@@ -75,7 +75,7 @@ fn load_mf_transactions_csv<P: AsRef<Path>>(
                 record[0]
                     .parse::<i32>()
                     .map_err(|e: std::num::ParseIntError| e.to_string())?,
-                utils::normalize_slashed_date(&record[1])?,
+                utils::str::normalize_slashed_date(&record[1])?,
                 &record[2],
                 record[3].parse::<i32>().map_err(|e| e.to_string())?,
                 &record[4],
@@ -94,7 +94,7 @@ fn load_mf_transactions_csv<P: AsRef<Path>>(
 pub fn load_categorization_rules<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("MF入出金明細の分類規則をロードします。");
 
-    let yaml_files = utils::list_files_with_extensions(dir, &["yaml", "yml"])?;
+    let yaml_files = utils::io::list_files_with_extensions(dir, &["yaml", "yml"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;

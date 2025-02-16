@@ -6,7 +6,7 @@ use std::path::Path;
 pub fn load_amazon_ohfd<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) のCSVをロードします。");
 
-    let csv_files = utils::list_files_with_extensions(dir, &["csv"])?;
+    let csv_files = utils::io::list_files_with_extensions(dir, &["csv"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
 
@@ -72,7 +72,7 @@ fn load_amazon_ohfd_csv<P: AsRef<Path>>(
                 order_date, order_no, product_name, product_info, amount, credit_card
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             (
-                utils::normalize_slashed_date(&record[0])?,
+                utils::str::normalize_slashed_date(&record[0])?,
                 &record[1],
                 &record[2],
                 &record[3],
@@ -94,7 +94,7 @@ fn load_amazon_ohfd_csv<P: AsRef<Path>>(
 pub fn load_amazon_ohfd_categorization_rules<P: AsRef<Path>>(dir: P) -> Result<(), DbError> {
     println!("アマゾン注文履歴フィルタ (デジタル) の分類規則をロードします。");
 
-    let yaml_files = utils::list_files_with_extensions(dir, &["yaml", "yml"])?;
+    let yaml_files = utils::io::list_files_with_extensions(dir, &["yaml", "yml"])?;
 
     let mut conn = rusqlite::Connection::open("data/transactions.db")?;
     let db_transaction = conn.transaction()?;

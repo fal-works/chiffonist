@@ -10,8 +10,8 @@ pub fn etl_amazon_ohfd_to_transaction_history() -> Result<bool, DbError> {
 
     let to_be_inserted = if select_unknown_credit_card.exists([])? {
         println!("下記のクレカ種類は channel がマッピングされていないため、処理対象外となります。");
-        utils::print_select_query(&mut select_unknown_credit_card, &[("[保有金融機関]", 0)])?;
-        utils::confirm_continue()?
+        utils::db::print_select_query(&mut select_unknown_credit_card, &[("[保有金融機関]", 0)])?;
+        utils::io::confirm_continue()?
     } else {
         conn.execute(
             include_str!("sql/create_tmp_categorized_amazon_ohfd.sql"),
@@ -24,7 +24,7 @@ pub fn etl_amazon_ohfd_to_transaction_history() -> Result<bool, DbError> {
 
         if select_uncategorized.exists([])? {
             println!("下記の明細が分類できませんでした:");
-            utils::print_select_query(
+            utils::db::print_select_query(
                 &mut select_uncategorized,
                 &[
                     ("注文日", 0),
@@ -35,7 +35,7 @@ pub fn etl_amazon_ohfd_to_transaction_history() -> Result<bool, DbError> {
                     ("クレカ種類", 0),
                 ],
             )?;
-            utils::confirm_continue()?
+            utils::io::confirm_continue()?
         } else {
             true
         }

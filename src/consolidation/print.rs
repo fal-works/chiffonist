@@ -24,7 +24,7 @@ pub fn print_transaction_summary() -> Result<(), DbError> {
         ("サブカテゴリー", 0),
         ("メモ", 30),
     ];
-    utils::print_select_query(&mut stmt, &columns)?;
+    utils::db::print_select_query(&mut stmt, &columns)?;
 
     Ok(())
 }
